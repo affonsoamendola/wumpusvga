@@ -1,4 +1,4 @@
-# wumpus
+# wumpusVGA
 A version of the classic Hunt the Wumpus for VGA PC-Compatibles running DOS made in 2018, for some great anachronism
 
 Mainly used the help of this book to understand how the VGA systems worked, really recommend it https://archive.org/details/BlackArt3DEBook
