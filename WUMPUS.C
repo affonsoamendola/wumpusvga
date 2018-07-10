@@ -13,8 +13,6 @@ int boardPosY = 10;
 #define boardSizeX 35
 #define boardSizeY 19
 
-#define holeChance 3
-
 int boardSquareSize = 8;
 
 int boardBorderColor = 30;
@@ -31,6 +29,8 @@ int arrowPosX = 0;
 int arrowPosY = 0;
 int hasArrow = 1;
 
+char scoreChar[8];
+
 int secretExitWall;
 int secretExitX;
 int secretExitY;
@@ -38,7 +38,13 @@ int secretExitY;
 int goldPosX;
 int goldPosY;
 
-int wumpusDistance=0;
+int difficulty = 1;
+
+int holeNumber = 3;
+
+char key;
+
+int wumpusDistance = 0;
 
 int score = 0;
 int escape = 0;
@@ -47,10 +53,20 @@ void drawScreen();
 
 void wumpusAI();
 
+int showWumpus =0;
+int showGold =0;
+int showHoles =0;
+
+int cheats = 0;
+
+int safetyCounter = 0;
+
+int visited[boardSizeX][boardSizeY];
+int hole[boardSizeX][boardSizeY];
+
 int main()
 {
-	int visited[boardSizeX][boardSizeY];
-	int hole[boardSizeX][boardSizeY];
+
 	int gameRunning = 1;
 	int x, y;
 	int eatenByWumpus = 0;
@@ -58,15 +74,68 @@ int main()
 	int win = 0;
 	int wumpusDead = 0;
 
+	set_graphics_mode(GRAPHICS_MODE13);
+
+	fill_rectangle(10,320,95,105,0);
+	print_string(10,96,40,"CHOOSE YOUR CHALLENGE LEVEL:",1);
+	print_string(10,106,40,"E:EASY  M:MEDIUM  H:HARD  U:ULTRA",1);
+	key = 'o';
+	while(!(key=='e'||key=='n'||key=='h'||key=='u'))
+	{
+		key = getch();
+		if(key=='e'){difficulty=1;holeNumber=6;}
+		if(key=='m'){difficulty=2;holeNumber=10;}
+		if(key=='h'){difficulty=3;holeNumber=18;}
+		if(key=='u'){difficulty=4;holeNumber=34;}
+		if(key=='c')
+		{
+			cheats = 1;
+			print_string(10,200-20,40,"YOU DIRTY CHEATER",1);
+			print_string(10,200-10,40,"Z:TOGGLE VIEW  X:GOTO ESCAPE",1);
+
+		}
+	}
 	srand(time(NULL));
 
 	secretExitWall = rand()%4;
 	secretExitX = rand()%(boardSizeX-2)+1;
 	secretExitY = rand()%(boardSizeY-2)+1;
 
-	for(x=0;x<boardSizeX;x++)
+	wumpusPosX=rand()%(boardSizeX-2)+1;
+	wumpusPosY=rand()%(boardSizeY-2)+1;
+
+	while(safetyCounter<10000)
 	{
-		for(y=0;y<boardSizeY;y++)
+		x=rand()%(boardSizeX-2)+1;
+		y=rand()%(boardSizeY-2)+1;
+		if(x!=playerPosX || y!=playerPosY)
+		{
+			wumpusPosX=x;
+			wumpusPosY=y;
+			break;
+		}
+		safetyCounter++;
+	}
+	safetyCounter = 0;
+
+	while(safetyCounter<10000)
+	{
+		x=rand()%(boardSizeX-2)+1;
+		y=rand()%(boardSizeY-2)+1;
+		if((x!=wumpusPosX || y!=wumpusPosY)&&
+		   (x!=playerPosX || y!=playerPosY))
+		{
+			goldPosX=x;
+			goldPosY=y;
+			break;
+		}
+		safetyCounter++;
+	}
+	safetyCounter = 0;
+
+	for(x=1;x<boardSizeX-1;x++)
+	{
+		for(y=1;y<boardSizeY-1;y++)
 		{
 			visited[x][y]=0;
 			hole[x][y]=0;
@@ -74,27 +143,27 @@ int main()
 			{
 				visited[x][y]=1;
 			}
-
-			if((rand()%100)<holeChance)
-			{
-				hole[x][y]=1;
-			}
-			//wumpusPosX=2;
-			//wumpusPosY=2;
-			//goldPosX=4;
-			//goldPosY=4;
-			wumpusPosX=(rand()%boardSizeX)+1;
-			wumpusPosY=(rand()%boardSizeY)+1;
-			goldPosX=(rand()%boardSizeX)+1;
-			goldPosY=(rand()%boardSizeY)+1;
 		}
 	}
-	set_graphics_mode(GRAPHICS_MODE13);
+
+	while(holeNumber>0 && safetyCounter < 10000)
+	{
+		x=rand()%(boardSizeX-3)+2;
+		y=rand()%(boardSizeY-3)+2;
+
+		if((x!=wumpusPosX || y!= wumpusPosY) &&
+		   (x!=goldPosX || y!= goldPosY) &&
+		   (x!=playerPosX || y!= playerPosY) &&
+		   hole[x][y]==0)
+		{
+			hole[x][y]=1;
+			holeNumber--;
+		}
+
+		safetyCounter++;
+	}
 	while (gameRunning)
 	{
-		char key;
-		char scoreChar[8];
-
 		fill_screen(0);
 
 		print_string(10,1,40,"FOFONSO`S WUMPUS HUNT",1);
@@ -107,7 +176,7 @@ int main()
 		{
 			print_string(10,200-9,40,"YOU SMELL A HORRIBLE STENCH",1);
 		}
-		if(escape==1)
+		if(escape==1&&wumpusDead==0)
 		{
 			wumpusDistance = abs(playerPosX-wumpusPosX)+abs(playerPosY-wumpusPosY);
 			if(wumpusDistance <2)
@@ -116,7 +185,7 @@ int main()
 			}else
 			if(wumpusDistance <6)
 			{
-				print_string(10,200-18,40,"YOU HEAR SOUNDS OF THE WUMPUS CLOSING IN",1);
+				print_string(10,200-18,40,"YOU HEAR THE WUMPUS CLOSING IN",1);
 			}else
 			if(wumpusDistance <12)
 			{
@@ -153,12 +222,14 @@ int main()
 
 
 		if(key=='q') gameRunning = 0;
+		if(key=='z'&&cheats==1) {showWumpus = !showWumpus; showGold = !showGold; showHoles = !showHoles;}
+		if(key=='x'&&cheats==1)escape=1;
 		if(key=='u')
 		{
 			if(playerPosY>1)
 			{
 				playerPosY-=1;
-				if(visited[playerPosX][playerPosY]==0)score+=10;
+				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
 			if(secretExitWall==0 && playerPosX==secretExitX)
 			{
@@ -172,7 +243,7 @@ int main()
 			if(playerPosY<(boardSizeY-1))
 			{
 				playerPosY+=1;
-				if(visited[playerPosX][playerPosY]==0)score+=10;
+				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
 			if(secretExitWall==2 && playerPosX == secretExitX)
 			{
@@ -186,7 +257,7 @@ int main()
 			if(playerPosX>1)
 			{
 				playerPosX-=1;
-				if(visited[playerPosX][playerPosY]==0)score+=10;
+				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
 			if(secretExitWall==1 && playerPosY == secretExitY)
 			{
@@ -200,7 +271,7 @@ int main()
 			if(playerPosX<(boardSizeX-1))
 			{
 				playerPosX+=1;
-				if(visited[playerPosX][playerPosY]==0)score+=10;
+				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
 			if(secretExitWall==3&&playerPosY==secretExitY)
 			{
@@ -213,8 +284,8 @@ int main()
 		if(key=='g'&& playerPosX==goldPosX && playerPosY==goldPosY)
 		{
 			score+=500;
-			goldPosX=0;
-			goldPosY=0;
+			goldPosX=-1;
+			goldPosY=-1;
 			fill_rectangle(10,320,95,105,0);
 			print_string(10,96,40,"YOU HEAR THE MIGTHY ROAR OF THE WUMPUS",1);
 			getch();
@@ -225,8 +296,8 @@ int main()
 		if(key=='g'&& playerPosX==arrowPosX && playerPosY==arrowPosY)
 		{
 			hasArrow = 1;
-			arrowPosX = 0;
-			arrowPosY = 0;
+			arrowPosX = -1;
+			arrowPosY = -1;
 		}
 		if(key=='f' && hasArrow ==1)
 		{
@@ -320,15 +391,16 @@ int main()
 			score-=200;
 			fellInHole=1;
 		}
+		if(escape==1 && wumpusDead==0)
+		{
+			wumpusAI();
+		}
+
 		if(playerPosX==wumpusPosX&&playerPosY==wumpusPosY &&wumpusDead ==0)
 		{
 			gameRunning=0;
 			score-=300;
 			eatenByWumpus=1;
-		}
-		if(escape==1)
-		{
-			wumpusAI();
 		}
 	}
 
@@ -354,7 +426,8 @@ int main()
 	}
 	print_string(10,96,40,"GAME OVER",1);
 	print_string(10,106,40,"THANK YOU FOR PLAYING",1);
-	print_string(10,116,40,"MADE BY AFFONSO AMENDOLA, 2018",1);
+	print_string(10,116,40,"YOUR SCORE:",1);
+	print_string(104,116,40,itoa(score,scoreChar),1);
 	print_string(10,126,40,"PRESS ANY KEY TO RETURN TO DOS",1);
 
 	getch();
@@ -370,23 +443,21 @@ void wumpusAI()
 	xDistance = playerPosX-wumpusPosX;
 	yDistance = playerPosY-wumpusPosY;
 
-	if(xDistance>=yDistance)
+	if(abs(xDistance)>abs(yDistance))
 	{
-		if(xDistance<0)
+		if(wumpusPosX>playerPosX)
 		{
 			wumpusPosX-=1;
 		}else
-		if(xDistance>=0)
 		{
 			wumpusPosX+=1;
 		}
 	}else
 	{
-		if(yDistance<0)
+		if(wumpusPosY>playerPosY)
 		{
 			wumpusPosY-=1;
 		}else
-		if(yDistance>=0)
 		{
 			wumpusPosY+=1;
 		}
@@ -427,6 +498,39 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 						boardPosY+((y+1)*boardSquareSize)-1,
 						visitedColor);
 			}
+			if((x==wumpusPosX && y==wumpusPosY && showWumpus==1) ||
+			    x==wumpusPosX && y==wumpusPosY && visited[x][y]==1)
+			{
+				fill_rectangle(	boardPosX+(x*boardSquareSize),
+						boardPosX+((x+1)*boardSquareSize)-1,
+						boardPosY+(y*boardSquareSize),
+						boardPosY+((y+1)*boardSquareSize)-1,
+						150);
+			}
+			if(x==goldPosX && y==goldPosY && showGold==1)
+			{
+				fill_rectangle(	boardPosX+(x*boardSquareSize),
+						boardPosX+((x+1)*boardSquareSize)-1,
+						boardPosY+(y*boardSquareSize),
+						boardPosY+((y+1)*boardSquareSize)-1,
+						180);
+			}
+			if(hole[x][y]==1 && showHoles==1)
+			{
+				fill_rectangle(	boardPosX+(x*boardSquareSize),
+						boardPosX+((x+1)*boardSquareSize)-1,
+						boardPosY+(y*boardSquareSize),
+						boardPosY+((y+1)*boardSquareSize)-1,
+						200);
+			}
+			if(x==playerPosX && y==playerPosY)
+			{
+				fill_rectangle(	boardPosX+(x*boardSquareSize),
+						boardPosX+((x+1)*boardSquareSize)-1,
+						boardPosY+(y*boardSquareSize),
+						boardPosY+((y+1)*boardSquareSize)-1,
+						playerColor);
+			}
 		}
 	}
 
@@ -434,7 +538,6 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 	{
 		if(secretExitWall==0)
 		{
-			score=0;
 			fill_rectangle( boardPosX + secretExitX*boardSquareSize,
 					boardPosX + (secretExitX+1)*boardSquareSize -1,
 					boardPosY,
@@ -443,7 +546,6 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 		}
 		if(secretExitWall==1)
 		{
-			score=1;
 			fill_rectangle( boardPosX,
 					boardPosX + boardSquareSize-1,
 					boardPosY + secretExitY*boardSquareSize,
@@ -452,7 +554,6 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 		}
 		if(secretExitWall==2)
 		{
-			score=2;
 			fill_rectangle( boardPosX + secretExitX*boardSquareSize,
 					boardPosX + (secretExitX+1)*boardSquareSize -1,
 					boardPosY + boardSizeY*boardSquareSize,
@@ -461,7 +562,6 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 		}
 		if(secretExitWall==3)
 		{
-			score=3;
 			fill_rectangle( boardPosX + boardSizeX*boardSquareSize,
 					boardPosX + (boardSizeX+1)*boardSquareSize-1,
 					boardPosY + secretExitY*boardSquareSize,

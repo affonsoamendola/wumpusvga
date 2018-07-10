@@ -16,3 +16,5 @@ void fill_rectangle(int x1, int x2, int y1, int y2, int color);
 
 void print_char(int xc, int yc, char c, int color, int transparent);
 void print_string(int x, int y, int color, char *string, int transparent);
+
+char* itoa(int i, char b[]);

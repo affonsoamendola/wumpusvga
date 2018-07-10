@@ -173,5 +173,5 @@ char* itoa(int i, char b[])
 		*--p = digit[i%10];
 		i = i/10;
 	}while(i);
-	return b:
+	return b;
 }
