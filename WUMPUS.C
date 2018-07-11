@@ -4,6 +4,9 @@
 #include <math.h>
 #include <time.h>
 
+#include <conio.h>
+#include <io.h>
+
 #include <RENDERER.H>
 
 #define PI 3.14159265
@@ -63,6 +66,8 @@ int safetyCounter = 0;
 
 int visited[boardSizeX][boardSizeY];
 int hole[boardSizeX][boardSizeY];
+
+void print_order_info();
 
 int main()
 {
@@ -167,7 +172,7 @@ int main()
 		fill_screen(0);
 
 		print_string(10,1,40,"FOFONSO`S WUMPUS HUNT",1);
-		print_string(320-10-8*8,1,40,itoa(score,scoreChar),1);
+		print_string(320-10-8*8,1,40,inttostring(score,scoreChar),1);
 		drawScreen(visited);
 		if((playerPosX+1==wumpusPosX&&playerPosY==wumpusPosY) ||
 		   (playerPosX-1==wumpusPosX&&playerPosY==wumpusPosY) ||
@@ -291,6 +296,7 @@ int main()
 			getch();
 			fill_rectangle(10,320,95,105,0);
 			print_string(10,96,40,"A SECRET DOOR OPENS NEARBY",1);
+			getch();
 			escape=1;
 		}
 		if(key=='g'&& playerPosX==arrowPosX && playerPosY==arrowPosY)
@@ -427,12 +433,192 @@ int main()
 	print_string(10,96,40,"GAME OVER",1);
 	print_string(10,106,40,"THANK YOU FOR PLAYING",1);
 	print_string(10,116,40,"YOUR SCORE:",1);
-	print_string(104,116,40,itoa(score,scoreChar),1);
+	print_string(104,116,40,inttostring(score,scoreChar),1);
 	print_string(10,126,40,"PRESS ANY KEY TO RETURN TO DOS",1);
 
 	getch();
 	set_graphics_mode(TEXT_MODE);
+	print_order_info();
 	return 0;
+}
+
+void print_order_info()
+{
+	int i =0;
+
+	textcolor(WHITE);
+	cprintf("\n");
+	cprintf("        ");
+	textcolor(RED);
+	for(i=0;i<64;i++)cprintf("%c",0xDB);
+	cprintf("        ");
+	cprintf("        ");
+	cprintf("%c",0xDB);
+	textcolor(WHITE);
+	textbackground(RED);
+	cprintf("FOFONSO'S WUMPUS HUNT");
+	textcolor(YELLOW);
+	cprintf(": The hottest new game for ");
+	textbackground(LIGHTGRAY);
+	textcolor(RED);
+	cprintf("V");
+	textcolor(GREEN);
+	cprintf("G");
+	textcolor(BLUE);
+	cprintf("A");
+	textcolor(YELLOW);
+	textbackground(RED);
+	cprintf(" PC's.      ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" ______________________________________________________________ ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf("                                                                ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" Explore a dark cave filled with ");
+	textcolor(LIGHTCYAN);
+	cprintf("TREASURE");
+	textcolor(YELLOW);
+	cprintf("... But... Be careful  ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" for you are not alone... The cave houses a ");
+	textcolor(GREEN);
+	cprintf("TERRIBLE");
+	textcolor(YELLOW);
+	cprintf(" and ");
+	textcolor(GREEN);
+	cprintf("SMELLY ");
+	textcolor(YELLOW);
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" creature called ");
+	textcolor(BROWN);
+	cprintf("THE TERRIBLY SMELLY WUMPUS");
+	textcolor(YELLOW);
+	cprintf("... That and It is   ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" filled with bottomless pits of ");
+	textcolor(MAGENTA);
+	cprintf("DEATH");
+	textcolor(YELLOW);
+	cprintf(", but don`t worry, you     ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" came prepared.  Pretty ");
+	textcolor(MAGENTA);
+	cprintf("BADLY");
+	textcolor(YELLOW);
+	cprintf("... But prepared nonetheless.      ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf("                                                                ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" This game was created by ");
+	textcolor(LIGHTCYAN);
+	cprintf("Affonso Amendola");
+	textcolor(YELLOW);
+	cprintf(", a Brazilian         ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" undergrad student at the ");
+	textcolor(MAGENTA);
+	cprintf("Institute of Astronomy, Geophysics    ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" and Atmospheric Sciences");
+	textcolor(YELLOW);
+	cprintf(" of the University of Sao Paulo,       ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" after finding an old book on ");
+	textbackground(LIGHTGRAY);
+	textcolor(RED);
+	cprintf("V");
+	textcolor(GREEN);
+	cprintf("G");
+	textcolor(BLUE);
+	cprintf("A");
+	textcolor(YELLOW);
+	textbackground(RED);
+	cprintf(" game development at ");
+	textcolor(GREEN);
+	cprintf("Garoa     ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" Hacker Clube");
+	textcolor(YELLOW);
+	cprintf(", a hackerspace in Sao Paulo, and spending a       ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" a sleepless weekend making it.                                 ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" Thank you so much for playing. I hope you had fun.             ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf("                                                                ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" Affonso Amendola, affonso.gino.neto@usp.br                     ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" http://www.github.com/affonsoamendola/wumpusvga                ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf(" 1:21 AM, 11 July 2018, Sao Paulo, Brazil, Earth                ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(RED);
+	cprintf("                                                                ");
+	textbackground(BLACK);
+	cprintf("        ");
+	cprintf("        ");
+	textbackground(BLACK);
+	cprintf("                                                                ");
 }
 
 void wumpusAI()
