@@ -85,7 +85,7 @@ int main()
 	print_string(10,96,40,"CHOOSE YOUR CHALLENGE LEVEL:",1);
 	print_string(10,106,40,"E:EASY  M:MEDIUM  H:HARD  U:ULTRA",1);
 	key = 'o';
-	while(!(key=='e'||key=='n'||key=='h'||key=='u'))
+	while(!(key=='e'||key=='m'||key=='h'||key=='u'))
 	{
 		key = getch();
 		if(key=='e'){difficulty=1;holeNumber=6;}
@@ -236,7 +236,7 @@ int main()
 				playerPosY-=1;
 				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
-			if(secretExitWall==0 && playerPosX==secretExitX)
+			if(secretExitWall==0 && playerPosX==secretExitX && escape == 1)
 			{
 				score+=1000;
 				gameRunning=0;
@@ -250,7 +250,7 @@ int main()
 				playerPosY+=1;
 				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
-			if(secretExitWall==2 && playerPosX == secretExitX)
+			if(secretExitWall==2 && playerPosX == secretExitX && escape == 1)
 			{
 				score+=1000;
 				gameRunning=0;
@@ -264,7 +264,7 @@ int main()
 				playerPosX-=1;
 				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
-			if(secretExitWall==1 && playerPosY == secretExitY)
+			if(secretExitWall==1 && playerPosY == secretExitY && escape == 1)
 			{
 				score+=1000;
 				gameRunning=0;
@@ -278,7 +278,7 @@ int main()
 				playerPosX+=1;
 				if(visited[playerPosX][playerPosY]==0)score+=10*difficulty;
 			}else
-			if(secretExitWall==3&&playerPosY==secretExitY)
+			if(secretExitWall==3&&playerPosY==secretExitY && escape == 1)
 			{
 				score+=1000;
 				gameRunning=0;
@@ -414,9 +414,10 @@ int main()
 	{
 		for(y=0;y<200;y++)
 		{
-			set_pixel(x,y,(int)(x*y*(256.0/(320.0*200.0))));
+			set_pixel(x,y,(int)((x+y)*(256.0/(320.0+200.0))));
 		}
 	}
+
 	fill_rectangle(0,320,84,134,0);
 	if(eatenByWumpus)
 	{
