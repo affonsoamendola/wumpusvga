@@ -14,17 +14,23 @@
 */
 
 #define GRAPHICS_MODE13 0x13
+#define GRAPHICS_MODE13DB 0xFE
+#define GRAPHICS_MODEX 0xFD
 #define TEXT_MODE 0x03
 #define GRAPHICS_MODEZ 0xFF
 
 #define ROM_CHAR_SET_SEG 0xF000
 #define ROM_CHAR_SET_OFF 0XFA6E
 
+#define VRETRACE 0x08
+
 #define SEQUENCER 0x3C4
 #define CRT_CONTROLLER 0x3D4
 #define GFX_CONTROLLER 0x3CE
 #define ATTR_CONTROLLER_FF 0x3DA
 #define ATTR_CONTROLLER_DATA 0x3C0
+
+#define MISC_OUTPUT 0x3C2
 
 #define CRT_MAX_SCANLINE 0x09
 #define CRT_ADDR_MODE 0x14
@@ -38,6 +44,9 @@
 
 #define SET_BITS(x,bits)(x|bits)
 #define RESET_BITS(x,bits)(x&~bits)
+
+extern int current_frame_buffer_page;
+extern int current_draw_buffer_page;
 
 void set_graphics_mode(int mode);
 void fill_screen(int color);

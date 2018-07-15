@@ -22,13 +22,15 @@
 #include <stdlib.h>
 #include <conio.h>
 
-unsigned char far* video_buffer = 0xA0000000L;
+unsigned char far* frame_buffer = 0xA0004B00L;
+unsigned char far* draw_buffer = 0xA0000000L;
 unsigned char far* rom_char_set = 0xF000FA6EL;
 
 int current_video_mode = TEXT_MODE;
 
 void set_graphics_mode(int mode)
 {
+	unsigned char data;
 	if(mode == TEXT_MODE)
 	{
 		_asm	{
@@ -44,7 +46,42 @@ void set_graphics_mode(int mode)
 			int 10h;
 			}
 	}
+	if(mode == GRAPHICS_MODEX)
+	{
+		_asm 	{
+				mov ax,0013h;
+				int 10h;
+				}
 
+		outport(SEQUENCER, 0x0604);
+		outport(SEQUENCER, 0x0100);
+		outportb(MISC_OUTPUT,0xe3);
+		outport(SEQUENCER, 0x0300);
+
+		outportb(CRT_CONTROLLER,0x11);
+		data = inportb(CRT_CONTROLLER+1);
+		data = data & 0x7f;
+		outportb(CRT_CONTROLLER+1,data);
+		outport(CRT_CONTROLLER, 0x0d06);
+		outport(CRT_CONTROLLER, 0x3e07);
+		outport(CRT_CONTROLLER, 0x4109);
+		outport(CRT_CONTROLLER, 0xea10);
+		outport(CRT_CONTROLLER, 0xac11);
+		outport(CRT_CONTROLLER, 0xdf12);
+		outport(CRT_CONTROLLER, 0x0014);
+		outport(CRT_CONTROLLER, 0xe715);
+		outport(CRT_CONTROLLER, 0x0616);
+		outport(CRT_CONTROLLER, 0xe317);
+
+		outport(SEQUENCER, 0x0f02);
+
+		_asm {
+			les di,draw_buffer;
+			sub ax,ax
+			mov cx,320*240/4;
+			rep stosw;
+		}
+	}
 	if(mode == GRAPHICS_MODEZ)
 	{
 		int data;
@@ -53,36 +90,36 @@ void set_graphics_mode(int mode)
 			int 10h;
 			}
 
-		outp(CRT_CONTROLLER,CRT_MAX_SCANLINE);
-		data = inp(CRT_CONTROLLER+1);
-		outp(CRT_CONTROLLER+1,RESET_BITS(data,0x0f));
+		outportb(CRT_CONTROLLER,CRT_MAX_SCANLINE);
+		data = inportb(CRT_CONTROLLER+1);
+		outportb(CRT_CONTROLLER+1,RESET_BITS(data,0x0f));
 
-		outp(CRT_CONTROLLER,CRT_ADDR_MODE);
-		data=inp(CRT_CONTROLLER+1);
-		outp(GFX_CONTROLLER+1,RESET_BITS(data,0x40));
+		outportb(CRT_CONTROLLER,CRT_ADDR_MODE);
+		data=inportb(CRT_CONTROLLER+1);
+		outportb(GFX_CONTROLLER+1,RESET_BITS(data,0x40));
 
-		outp(CRT_CONTROLLER,CRT_MODE_CONTROL);
-		data=inp(CRT_CONTROLLER+1);
-		outp(CRT_CONTROLLER+1,SET_BITS(data,0x40));
+		outportb(CRT_CONTROLLER,CRT_MODE_CONTROL);
+		data=inportb(CRT_CONTROLLER+1);
+		outportb(CRT_CONTROLLER+1,SET_BITS(data,0x40));
 
-		outp(GFX_CONTROLLER,GFX_WRITE_MODE);
-		data=inp(GFX_CONTROLLER+1);
-		outp(GFX_CONTROLLER+1,RESET_BITS(data,0x10));
+		outportb(GFX_CONTROLLER,GFX_WRITE_MODE);
+		data=inportb(GFX_CONTROLLER+1);
+		outportb(GFX_CONTROLLER+1,RESET_BITS(data,0x10));
 
-		outp(GFX_CONTROLLER,GFX_MISC);
-		data=inp(GFX_CONTROLLER+1);
-		outp(GFX_CONTROLLER+1,RESET_BITS(data,0x02));
+		outportb(GFX_CONTROLLER,GFX_MISC);
+		data=inportb(GFX_CONTROLLER+1);
+		outportb(GFX_CONTROLLER+1,RESET_BITS(data,0x02));
 
-		outp(SEQUENCER,SEQ_MEMORY_MODE);
-		data=inp(SEQUENCER+1);
+		outportb(SEQUENCER,SEQ_MEMORY_MODE);
+		data=inportb(SEQUENCER+1);
 		data=RESET_BITS(data,0x08);
 		data=SET_BITS(data,0x04);
-		outp(SEQUENCER+1,data);
-		outp(SEQUENCER,SEQ_PLANE_ENABLE);
-		outp(SEQUENCER+1,0x0f);
+		outportb(SEQUENCER+1,data);
+		outportb(SEQUENCER,SEQ_PLANE_ENABLE);
+		outportb(SEQUENCER+1,0x0f);
 
 		_asm	{
-			les di, video_buffer;
+			les di, draw_buffer;
 			xor ax,ax;
 			mov cx,320*400/8;
 			rep stosw;
@@ -96,13 +133,28 @@ void fill_screen(int color)
 	if(current_video_mode == GRAPHICS_MODE13)
 	{
 	_asm	{
-		les di,video_buffer;
+		les di,draw_buffer;
 		mov al,BYTE PTR color;
 		mov ah,al;
 		mov cx,320*200/2;
 		rep stosw;
 		}
 	}
+	if(current_video_mode == GRAPHICS_MODEX)
+	{
+	_asm	{
+		mov dx,SEQUENCER;
+		mov al,SEQ_PLANE_ENABLE;
+		mov ah,0fh;
+		out dx,ax;
+		les di,draw_buffer;
+		mov al,BYTE PTR color;
+		mov ah,al;
+		mov cx,(320*240/8);
+		rep stosw;
+		}
+	}
+
 	if(current_video_mode == GRAPHICS_MODEZ)
 	{
 	_asm	{
@@ -110,7 +162,7 @@ void fill_screen(int color)
 		mov al,SEQ_PLANE_ENABLE;
 		mov ah,0fh;
 		out dx,ax;
-		les di,video_buffer;
+		les di,draw_buffer;
 		mov al,BYTE PTR color;
 		mov ah,al;
 		mov cx,320*400/8;
@@ -123,8 +175,14 @@ void set_pixel(int x, int y, int color)
 {
 	if(current_video_mode == GRAPHICS_MODE13)
 	{
-		video_buffer[(y<<8)+(y<<6)+x] = (unsigned char)color;
+		draw_buffer[(y<<8)+(y<<6)+x] = (unsigned char)color;
 	}
+	if(current_video_mode == GRAPHICS_MODEX)
+	{
+		outport(SEQUENCER, 0x02+(1<<((x%4)+8)));
+		draw_buffer[(y<<6)+(y<<4)+(x>>2)] = (unsigned char)color;
+	}
+
 	if(current_video_mode == GRAPHICS_MODEZ)
 	{
 		_asm	{
@@ -136,7 +194,7 @@ void set_pixel(int x, int y, int color)
 			shl ah,cl;
 			out dx,ax;
 			}
-		video_buffer[(y<<6)+(y<<4)+(x>>2)] = (unsigned char)color;
+		draw_buffer[(y<<6)+(y<<4)+(x>>2)] = (unsigned char)color;
 	}
 }
 
@@ -144,8 +202,9 @@ int get_pixel(int x, int y)
 {
 	if(current_video_mode == GRAPHICS_MODE13)
 	{
-		return((int)(video_buffer[(y<<8)+(y<<6)+x]));
+		return((int)(draw_buffer[(y<<8)+(y<<6)+x]));
 	}
+
 	if(current_video_mode == GRAPHICS_MODEZ)
 	{
 		_asm	{
@@ -157,7 +216,7 @@ int get_pixel(int x, int y)
 			shl ah,cl;
 			out dx,ax;
 			}
-		return((int)(video_buffer[(y<<6)+(y<<4)+(x>>2)]));
+		return((int)(draw_buffer[(y<<6)+(y<<4)+(x>>2)]));
 	}
 	return -1;
 }
@@ -175,7 +234,71 @@ void draw_line_h(int x1, int x2, int y, int color)
 			x2 = temp;
 		}
 
-		_fmemset((char far *)(video_buffer + ((y<<8) +(y<<6))+x1),(unsigned char)color, x2-x1+1);
+		_fmemset((unsigned char far *)(draw_buffer + ((y<<8) +(y<<6))+x1),(unsigned char)color, x2-x1+1);
+	}
+	if(current_video_mode == GRAPHICS_MODEX)
+	{
+		int temp;
+		unsigned int startSequence =0;
+		unsigned int endSequence=0;
+		
+		if(x1>x2)
+		{
+			temp=x1;
+			x1=x2;
+			x2=temp;
+		}
+
+		if(x2>>2 != x1>>2)
+		{
+			_asm 	{
+						mov dx, SEQUENCER
+						mov al, 02h
+						mov cl, BYTE PTR x1
+						and cl, 03h
+						mov bl, 0fh
+						shl bl, cl
+						mov ah, bl
+						out dx, ax
+					}
+
+			draw_buffer[(y<<6)+(y<<4)+(x1>>2)] = (unsigned char)color;
+
+			_asm 	{
+						mov dx, SEQUENCER
+						mov ax, 0f02h
+						out dx, ax
+					}
+			
+			_fmemset((unsigned char far *)(draw_buffer + ((y<<6) +(y<<4)+(x1>>2)+1)),(unsigned char)color, (x2-x2%4-x1-4+x1%4)>>2);
+			
+			_asm 	{ 
+						mov dx, SEQUENCER
+						mov al, 02h
+						mov bl, BYTE PTR x2
+						and bl, 03h
+						mov cl, 03h
+						sub cl, bl
+						mov bl, 0fh
+						shr bl, cl
+						mov ah, bl
+						out dx, ax
+					}
+
+			draw_buffer[(y<<6)+(y<<4)+(x2>>2)] = (unsigned char)color;
+		}
+		else
+		{
+			int i = 0;
+			int sequence = 0x0;
+			for(i = x1%4; i<= x2%4;i++)
+			{
+				sequence += 0x01<<i;
+			}
+			sequence = sequence<<8;
+			outport(SEQUENCER, sequence+0x02);
+			draw_buffer[(y<<6)+(y<<4)+(x1>>2)] = (unsigned char)color;
+		}
 	}
 }
 
@@ -195,7 +318,7 @@ void draw_line_v(int x, int y1, int y2, int color)
 			y2 = temp;
 		}
 
-		start_offset = video_buffer + ((y1<<8) + (y1<<6)) + x;
+		start_offset = draw_buffer + ((y1<<8) + (y1<<6)) + x;
 
 		length = y2-y1;
 
@@ -205,38 +328,182 @@ void draw_line_v(int x, int y1, int y2, int color)
 			start_offset+=320;
 		}
 	}
+	if(current_video_mode == GRAPHICS_MODEX)
+	{
+		int temp;
+		int length;
+		int i;
+		unsigned char far *start_offset;
+
+		if(y1>y2)
+		{
+			temp = y1;
+			y1 = y2;
+			y2 = temp;
+		}
+
+		start_offset = draw_buffer + ((y1<<6) + (y1<<4) + (x>>2));
+
+		length = y2-y1;
+		outport(SEQUENCER, 0x02+(1<<((x%4)+8)));
+
+		for(i=0;i<=length;i++)
+		{
+			*start_offset = (unsigned char)color;
+			start_offset+=80;
+		}
+	}
+}
+
+void frame_page(int page)
+{
+	if(page == 0)
+	{
+		frame_buffer = (unsigned char far*)0xA0000000L;
+		current_frame_buffer_page = 0;
+	}else
+	if(page == 1)
+	{
+		frame_buffer = (unsigned char far*)0xA0004B00L;
+		current_frame_buffer_page = 1;
+	}
+
+	_asm	{
+				mov     bl,0dh 
+     		   	mov     bh,byte ptr frame_buffer
+     		   	mov     cl,0ch      
+        		mov     ch,byte ptr frame_buffer+1
+        		mov     dx,CRT_CONTROLLER
+       			mov     ax,bx
+       			out     dx,ax
+       			mov     ax,cx
+       			out     dx,ax
+			}
+}
+
+void draw_page(int page)
+{
+	if(page == 0)
+	{
+		draw_buffer = (unsigned char far*)0xA0000000L;
+		current_draw_buffer_page = 0;
+	}else
+	if(page == 1)
+	{
+		draw_buffer = (unsigned char far*)0xA0004B00L;
+		current_draw_buffer_page = 1;
+	}
 }
 
 void fill_rectangle(int x1, int x2, int y1, int y2, int color)
 {
 	if(current_video_mode == GRAPHICS_MODE13)
 	{
-	int temp;
-	int i;
-	int height;
-	unsigned char far * start_offset;
+		int temp;
+		int i;
+		int height;
+		unsigned char far * start_offset;
 
-	if(x1>x2)
-	{
-		temp = x1;
-		x1 = x2;
-		x2 = temp;
-	}
-	if(y1>y2)
-	{
-		temp = y1;
-		y1 = y2;
-		y2 = temp;
-	}
+		if(x1>x2)
+		{
+			temp = x1;
+			x1 = x2;
+			x2 = temp;
+		}
+		if(y1>y2)
+		{
+			temp = y1;
+			y1 = y2;
+			y2 = temp;
+		}
 
-	start_offset = video_buffer + ((y1<<8) + (y1<<6)) + x1;
-	height = y2-y1;
+		start_offset = draw_buffer + ((y1<<8) + (y1<<6)) + x1;
+		height = y2-y1;
 
-	for(i=0;i<=height;i++)
-	{
-		_fmemset(start_offset,(unsigned char)color, x2-x1+1);
-		start_offset+=320;
+		for(i=0;i<=height;i++)
+		{
+				_fmemset(start_offset,(unsigned char)color, x2-x1+1);
+				start_offset+=320;
+		}
 	}
+	if(current_video_mode == GRAPHICS_MODEX)
+	{
+		int temp;
+		int i;
+		int height;
+		unsigned char far * start_offset;
+
+		if(x1>x2)
+		{
+			temp = x1;
+			x1 = x2;
+			x2 = temp;
+		}
+		if(y1>y2)
+		{
+			temp = y1;
+			y1 = y2;
+			y2 = temp;
+		}
+
+		start_offset = draw_buffer + ((y1<<6) + (y1<<4));
+		height = y2-y1;
+
+		for(i=0;i<=height;i++)
+		{
+			if(x2>>2 != x1>>2)
+			{
+				_asm 	{
+							mov dx, SEQUENCER
+							mov al, 02h
+							mov cl, BYTE PTR x1
+							and cl, 03h
+							mov bl, 0fh
+							shl bl, cl
+							mov ah, bl
+							out dx, ax
+						}
+						
+				*(start_offset+(x1>>2)) = (unsigned char)color;
+
+				_asm 	{
+							mov dx, SEQUENCER
+							mov ax, 0f02h
+							out dx, ax
+						}
+				
+				_fmemset((unsigned char far *)(start_offset+(x1>>2)+1),(unsigned char)color, (x2-x2%4-x1-4+x1%4)>>2);
+				
+				_asm 	{ 
+							mov dx, SEQUENCER
+							mov al, 02h
+							mov bl, BYTE PTR x2
+							and bl, 03h
+							mov cl, 03h
+							sub cl, bl
+							mov bl, 0fh
+							shr bl, cl
+							mov ah, bl
+							out dx, ax
+						}
+
+				*(start_offset+(x2>>2)) = (unsigned char)color;
+				start_offset+=80;
+			}
+			else
+			{
+				int i = 0;
+				int sequence = 0x0;
+				for(i = x1%4; i<= x2%4;i++)
+				{
+					sequence += 0x01<<i;
+				}
+				sequence = sequence<<8;
+				outport(SEQUENCER, sequence+0x02);
+				*start_offset = (unsigned char)color;
+				start_offset +=80;
+			}
+		}
 	}
 }
 
@@ -260,10 +527,10 @@ void print_char(int xc, int yc, char c, int color, int transparent)
 			for(x=0; x<8; x++)
 			{
 				if((*work_char & bit_mask))
-					video_buffer[offset+x] = (unsigned char)color;
+					draw_buffer[offset+x] = (unsigned char)color;
 				else
 				if(!transparent)
-					video_buffer[offset+x] = 0;
+					draw_buffer[offset+x] = 0;
 
 				bit_mask = (bit_mask>>1);
 			}
@@ -271,11 +538,50 @@ void print_char(int xc, int yc, char c, int color, int transparent)
 			work_char++;
 		}
 	}
+
+	if(current_video_mode == GRAPHICS_MODEX)
+	{
+		int offset, x, y;
+
+		unsigned char far *work_char;
+
+		unsigned char bit_mask;
+		unsigned char sequence;
+
+		work_char = rom_char_set + c*8;
+
+		offset = (yc<<6)+(yc<<4);
+		
+		for(y=0; y<8; y++)
+		{
+			bit_mask = 0x88;
+			for(x=0; x<4; x++)
+			{
+				sequence = (xc+x)%4;
+				outport(SEQUENCER, ((0x1<<sequence)<<8)+0x02);
+				if((*work_char & (bit_mask & 0xf0)))
+					draw_buffer[offset+((xc+x)>>2)] = (unsigned char)color;
+				else
+				if(!transparent)
+					draw_buffer[offset+((xc+x)>>2)] = 0;
+		
+				if((*work_char & (bit_mask & 0x0f)))
+					draw_buffer[offset+((xc+x)>>2)+1] = (unsigned char)color;
+				else
+				if(!transparent)
+					draw_buffer[offset+((xc+x)>>2)+1] = 0;
+				
+				bit_mask = (bit_mask>>1);
+			}
+			offset+=80;
+			work_char++;
+		}
+	}
 }
 
 void print_string(int x, int y, int color, char *string, int transparent)
 {
-	if(current_video_mode == GRAPHICS_MODE13)
+	if(current_video_mode == GRAPHICS_MODE13 || current_video_mode == GRAPHICS_MODEX)
 	{
 		int i, length;
 

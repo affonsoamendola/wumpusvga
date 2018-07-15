@@ -31,10 +31,10 @@
 
 int boardPosX = 10;
 int boardPosY = 10;
-#define boardSizeX 35
+#define boardSizeX 29
 #define boardSizeY 19
 
-int boardSquareSize = 8;
+int boardSquareSize = 10;
 
 int boardBorderColor = 30;
 int playerColor = 40;
@@ -85,6 +85,9 @@ int safetyCounter = 0;
 int visited[boardSizeX][boardSizeY];
 int hole[boardSizeX][boardSizeY];
 
+int current_draw_buffer_page;
+int current_frame_buffer_page;
+
 void print_order_info();
 
 int main()
@@ -97,7 +100,9 @@ int main()
 	int win = 0;
 	int wumpusDead = 0;
 
-	set_graphics_mode(GRAPHICS_MODE13);
+	set_graphics_mode(GRAPHICS_MODEX);
+	draw_page(0);
+	frame_page(0);
 
 	fill_rectangle(10,320,95,105,0);
 	print_string(10,96,40,"CHOOSE YOUR CHALLENGE LEVEL:",1);
@@ -113,9 +118,8 @@ int main()
 		if(key=='c')
 		{
 			cheats = 1;
-			print_string(10,200-20,40,"YOU DIRTY CHEATER",1);
-			print_string(10,200-10,40,"Z:TOGGLE VIEW  X:GOTO ESCAPE",1);
-
+			print_string(10,240-20,40,"YOU DIRTY CHEATER",1);
+			print_string(10,240-10,40,"Z:TOGGLE VIEW  X:GOTO ESCAPE",1);
 		}
 	}
 	srand(time(NULL));
@@ -186,9 +190,9 @@ int main()
 		safetyCounter++;
 	}
 	while (gameRunning)
-	{
+	{	
+		draw_page(!current_draw_buffer_page);	
 		fill_screen(0);
-
 		print_string(10,1,40,"FOFONSO`S WUMPUS HUNT",1);
 		print_string(320-10-8*8,1,40,inttostring(score,scoreChar),1);
 		drawScreen(visited);
@@ -197,53 +201,51 @@ int main()
 		   (playerPosY+1==wumpusPosY&&playerPosX==wumpusPosX) ||
 		   (playerPosY-1==wumpusPosY&&playerPosX==wumpusPosX))
 		{
-			print_string(10,200-9,40,"YOU SMELL A HORRIBLE STENCH",1);
+			print_string(10,240-9,40,"YOU SMELL A HORRIBLE STENCH",1);
 		}
 		if(escape==1&&wumpusDead==0)
 		{
 			wumpusDistance = abs(playerPosX-wumpusPosX)+abs(playerPosY-wumpusPosY);
 			if(wumpusDistance <2)
 			{
-				print_string(10,200-18,40,"YOU HEAR DEATH RIGHT BESIDE YOU",1);
+				print_string(10,240-18,40,"YOU HEAR DEATH RIGHT BESIDE YOU",1);
 			}else
 			if(wumpusDistance <6)
 			{
-				print_string(10,200-18,40,"YOU HEAR THE WUMPUS CLOSING IN",1);
+				print_string(10,240-18,40,"YOU HEAR THE WUMPUS CLOSING IN",1);
 			}else
 			if(wumpusDistance <12)
 			{
-				print_string(10,200-18,40,"YOU HEAR GROWLING A SHORT DISTANCE AWAY",1);
+				print_string(10,240-18,40,"YOU HEAR GROWLING A SHORT DISTANCE AWAY",1);
 			}
 			else
 			if(wumpusDistance <22)
 			{
-				print_string(10,200-18,40,"YOU HEAR LOUD NOISES IN THE DISTANCE",1);
+				print_string(10,240-18,40,"YOU HEAR LOUD NOISES IN THE DISTANCE",1);
 			}
 		}
 		if(playerPosX==goldPosX&&playerPosY==goldPosY)
 		{
-			print_string(10,200-18,40,"YOU SEE A GLINT OF LIGHT",1);
+			print_string(10,240-18,40,"YOU SEE A GLINT OF LIGHT",1);
 		}
 		if(hole[playerPosX+1][playerPosY]==1 ||
 		   hole[playerPosX-1][playerPosY]==1 ||
 		   hole[playerPosX][playerPosY+1]==1 ||
 		   hole[playerPosX][playerPosY-1]==1)
 		{
-			print_string(10,200-27,40,"YOU FEEL A DRAFT",1);
+			print_string(10,240-27,40,"YOU FEEL A DRAFT",1);
 		}
 
 		if(playerPosX==wumpusPosX&&playerPosY==wumpusPosY &&wumpusDead==1)
 		{
-			print_string(10,200-9,40,"HERE LIES A DEAD WUMPUS",1);
+			print_string(10,240-9,40,"HERE LIES A DEAD WUMPUS",1);
 		}
 		if(playerPosX==arrowPosX && playerPosY==arrowPosY)
 		{
-			print_string(10,200-27,40,"THERE IS AN ARROW ON THE GROUND",1);
+			print_string(10,240-27,40,"THERE IS AN ARROW ON THE GROUND",1);
 		}
-
+		frame_page(!current_frame_buffer_page);
 		key = getch();
-
-
 		if(key=='q') gameRunning = 0;
 		if(key=='z'&&cheats==1) {showWumpus = !showWumpus; showGold = !showGold; showHoles = !showHoles;}
 		if(key=='x'&&cheats==1)escape=1;
@@ -310,8 +312,12 @@ int main()
 			goldPosX=-1;
 			goldPosY=-1;
 			fill_rectangle(10,320,95,105,0);
-			print_string(10,96,40,"YOU HEAR THE MIGTHY ROAR OF THE WUMPUS",1);
-			getch();
+			
+			if(wumpusDead == 0)
+			{
+				print_string(10,96,40,"YOU HEAR THE MIGTHY ROAR OF THE WUMPUS",1);
+				getch();
+			}
 			fill_rectangle(10,320,95,105,0);
 			print_string(10,96,40,"A SECRET DOOR OPENS NEARBY",1);
 			getch();
@@ -408,6 +414,7 @@ int main()
 					score-=100;
 				}
 			}
+
 		}
 		if(hole[playerPosX][playerPosY]==1)
 		{
@@ -427,12 +434,13 @@ int main()
 			eatenByWumpus=1;
 		}
 	}
+	draw_page(!current_draw_buffer_page);
 
 	for(x=0;x<320;x++)
 	{
-		for(y=0;y<200;y++)
+		for(y=0;y<240;y++)
 		{
-			set_pixel(x,y,(int)((x+y)*(256.0/(320.0+200.0))));
+			set_pixel(x,y,(int)((x*y)*(256.0/(320.0*240.0))));
 		}
 	}
 
@@ -454,10 +462,11 @@ int main()
 	print_string(10,116,40,"YOUR SCORE:",1);
 	print_string(104,116,40,inttostring(score,scoreChar),1);
 	print_string(10,126,40,"PRESS ANY KEY TO RETURN TO DOS",1);
-
+	frame_page(!current_frame_buffer_page);
 	getch();
 	set_graphics_mode(TEXT_MODE);
 	print_order_info();
+
 	return 0;
 }
 
@@ -681,10 +690,10 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 			if(x==0 || y==0 || x==boardSizeX || y==boardSizeY)
 			{
 				fill_rectangle(	boardPosX+(x*boardSquareSize),
-						boardPosX+((x+1)*boardSquareSize)-1,
-						boardPosY+(y*boardSquareSize),
-						boardPosY+((y+1)*boardSquareSize)-1,
-						boardBorderColor);
+								boardPosX+((x+1)*boardSquareSize-1),
+								boardPosY+(y*boardSquareSize),
+								boardPosY+((y+1)*boardSquareSize-1),
+								boardBorderColor);
 
 			}
 			if(x==playerPosX && y==playerPosY)
