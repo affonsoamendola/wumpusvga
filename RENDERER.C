@@ -28,6 +28,50 @@ unsigned char far* rom_char_set = 0xF000FA6EL;
 
 int current_video_mode = TEXT_MODE;
 
+void set_color(unsigned char color_index, unsigned char red, unsigned char green, unsigned char blue)
+{
+	outportb(DAC_WRITE, color_index);
+	outportb(DAC_DATA, red);
+	outportb(DAC_DATA, green);
+	outportb(DAC_DATA, blue);
+}
+
+void set_pallette(unsigned char* pallette, int start_index, int end_index)
+{
+	int i;
+	int j;
+	outportb(DAC_WRITE, start_index);
+	for(i = 0; i <= end_index-start_index; i++)
+	{
+		for(j=0; j<3; j++)
+		{
+			outportb(DAC_DATA,*(pallette+(i*3)+j));
+		}
+	}
+}
+
+void get_pallette(unsigned char* pallette, int start_index ,int end_index)
+{
+	int i;
+	int j;
+
+	outportb(DAC_READ, start_index);
+	for(i = 0; i <= end_index-start_index; i++)
+	{
+		for(j=0; j<3; j++)
+		{
+			*(pallette+(i*3)+j) = inportb(DAC_DATA);
+		}
+	}
+	return pallette;
+}
+
+unsigned char get_color(unsigned char color_index)
+{
+	outportb(DAC_WRITE, color_index);
+	return inportb(DAC_DATA);
+}
+
 void set_graphics_mode(int mode)
 {
 	unsigned char data;

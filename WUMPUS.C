@@ -99,6 +99,10 @@ int main()
 	int fellInHole = 0;
 	int win = 0;
 	int wumpusDead = 0;
+	int i,j,k;
+
+	unsigned char* color_pallette;
+	unsigned char* color_temp;
 
 	set_graphics_mode(GRAPHICS_MODEX);
 	draw_page(0);
@@ -440,7 +444,7 @@ int main()
 	{
 		for(y=0;y<240;y++)
 		{
-			set_pixel(x,y,(int)((x*y)*(256.0/(320.0*240.0))));
+			set_pixel(x,y,(int)((y*x)*(256.0/(320.0*240.0))));
 		}
 	}
 
@@ -463,7 +467,19 @@ int main()
 	print_string(104,116,40,inttostring(score,scoreChar),1);
 	print_string(10,126,40,"PRESS ANY KEY TO RETURN TO DOS",1);
 	frame_page(!current_frame_buffer_page);
-	getch();
+
+	while(!kbhit())
+	{
+		delay(50);	
+		color_pallette = malloc(255*3);
+		color_temp = malloc(1*3);
+		get_pallette(color_pallette,1,255);	
+		get_pallette(color_temp,0,0);
+		set_pallette(color_pallette,0,254);
+		set_pallette(color_temp,255,255);
+		free(color_pallette);
+		free(color_temp);
+	}
 	set_graphics_mode(TEXT_MODE);
 	print_order_info();
 
