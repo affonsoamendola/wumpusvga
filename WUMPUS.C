@@ -26,6 +26,7 @@
 #include <io.h>
 
 #include <RENDERER.H>
+#include <FONFLIB.H>
 
 #define PI 3.14159265
 
@@ -101,13 +102,23 @@ int main()
 	int wumpusDead = 0;
 	int i,j,k;
 
+	unsigned char far * image_mem_location = 0xA000E101L;
+
 	unsigned char* color_pallette;
 	unsigned char* color_temp;
 
 	set_graphics_mode(GRAPHICS_MODEX);
 	draw_page(0);
 	frame_page(0);
+	color_pallette = malloc(256*3);
+	get_pallette(color_pallette, 0, 255);
+	load_pallette("plt/TITLE.PLT", 12);
 
+	load_pgm("graphix/title.pgm", image_mem_location, 216, 124);
+	copy_vmem_to_fbuffer(image_mem_location, 0, 1, 216, 124);
+
+	getch();
+	
 	fill_rectangle(10,320,95,105,0);
 	print_string(10,96,40,"CHOOSE YOUR CHALLENGE LEVEL:",1);
 	print_string(10,106,40,"E:EASY  M:MEDIUM  H:HARD  U:ULTRA",1);
@@ -482,7 +493,7 @@ int main()
 	}
 	set_graphics_mode(TEXT_MODE);
 	print_order_info();
-
+	
 	return 0;
 }
 

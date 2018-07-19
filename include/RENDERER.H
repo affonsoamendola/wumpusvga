@@ -13,6 +13,9 @@
     along with WumpusVGA.  If not, see <https://www.gnu.org/licenses/>
 */
 
+#ifndef RENDERER_H
+#define RENDERER_H
+
 #define GRAPHICS_MODE13 0x13
 #define GRAPHICS_MODE13DB 0xFE
 #define GRAPHICS_MODEX 0xFD
@@ -47,13 +50,22 @@
 #define SEQ_PLANE_ENABLE 0x02
 #define SEQ_MEMORY_MODE 0x04
 
-#define SET_BITS(x,bits)(x|bits)
-#define RESET_BITS(x,bits)(x&~bits)
+#define O_RDONLY        0x01
+
+#define SCREEN_WIDTH    320
+#define SCREEN_HEIGHT   240
 
 extern int current_frame_buffer_page;
 extern int current_draw_buffer_page;
 
+void set_color(unsigned char color_index, unsigned char red, unsigned char green, unsigned char blue);
+void set_pallette(unsigned char* pallette, int start_index, int end_index);
+void write_pallette(char * filename, unsigned char* pallette, int start_index, int end_index);
+void get_pallette(unsigned char* pallette, int start_index ,int end_index);
+unsigned char get_color(unsigned char color_index);
+
 void set_graphics_mode(int mode);
+
 void fill_screen(int color);
 void set_pixel(int x, int y, int color);
 int get_pixel(int x, int y);
@@ -61,9 +73,16 @@ int get_pixel(int x, int y);
 void draw_line_h(int x1, int x2, int y, int color);
 void draw_line_v(int x, int y1, int y2, int color);
 
+void frame_page(int page);
+void draw_page(int page);
+
 void fill_rectangle(int x1, int x2, int y1, int y2, int color);
 
 void print_char(int xc, int yc, char c, int color, int transparent);
 void print_string(int x, int y, int color, char *string, int transparent);
 
-char* inttostring(int i, char b[]);
+void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int y_size);
+
+void copy_vmem_to_fbuffer(unsigned char far * location, int x_pos, int y_pos, int x_size, int y_size);
+
+#endif /* RENDERER_H */

@@ -13,14 +13,15 @@
     along with WumpusVGA.  If not, see <https://www.gnu.org/licenses/>
 */
 
-#include <renderer.h>
-
 #include <bios.h>
 #include <dos.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <conio.h>
+
+#include <RENDERER.H>
+#include <FONFLIB.H>
 
 unsigned char far* frame_buffer = 0xA0004B00L;
 unsigned char far* draw_buffer = 0xA0000000L;
@@ -50,6 +51,150 @@ void set_pallette(unsigned char* pallette, int start_index, int end_index)
 	}
 }
 
+void write_pallette(char * filename, unsigned char* pallette, int start_index, int end_index)
+{
+	FILE * file;
+	int i;
+	int j;
+
+	unsigned char current_char;
+
+	int middle_of_number;
+
+	file = fopen(filename, "w");
+
+	for (i = 0; i <= (end_index-start_index); i++)
+	{
+		fputi(start_index + i, 3, file);
+		fputc(' ', file);
+
+		for(j = 0; j<3; j++)
+		{
+			fputi((*(pallette+i*3+j)), 3, file);
+			if(j < 2)
+				fputc(' ',file);
+			else
+				fputc('\n',file);
+		}
+	}
+}
+
+void load_pallette(char * filename, int size)
+{
+	FILE * file;
+	int i;
+	int j;
+
+	unsigned char r, g, b;
+
+	unsigned char index = 0;
+
+	int format_error = 0;
+
+	unsigned char current_char;
+
+	r = 0;
+	g = 0;
+	b = 0;
+
+	file = fopen(filename, "r");
+	for(j= 0; j<size; j++)
+	{	
+		for(i= 0; i<4;i++)
+		{	
+			current_char = fgetc(file);
+
+			if(current_char >= 48 && current_char <= 58)
+			{
+				index = index*10 + current_char - 48;
+				
+			}
+			else if(current_char == 32)
+			{
+				break;
+			}
+			else
+			{
+				format_error = 1;
+			}
+		}
+
+		for(i= 0; i<4;i++)
+		{	
+			current_char = fgetc(file);
+
+			if(current_char >= 48 && current_char <= 58)
+			{
+				r = r*10 + current_char - 48;
+				
+			}
+			else if(current_char == 32)
+			{
+				break;
+			}
+			else
+			{
+				format_error = 1;
+			}
+		}
+
+		for(i= 0; i<4;i++)
+		{	
+			current_char = fgetc(file);
+
+			if(current_char >= 48 && current_char <= 58)
+			{
+				g = g*10 + current_char - 48;
+				
+			}
+			else if(current_char == 32)
+			{
+				break;
+			}
+			else
+			{
+				format_error = 1;
+			}
+		}
+
+		for(i= 0; i<4;i++)
+		{	
+			current_char = fgetc(file);
+			
+			if(current_char >= 48 && current_char <= 58)
+			{
+				b = b*10 + current_char - 48;
+				
+			}
+			else if(current_char == '\n')
+			{
+				break;
+			}
+			else
+			{
+				format_error = 1;
+			}
+		}
+
+		if(format_error == 1)
+		{
+			set_graphics_mode(TEXT_MODE);
+			printf("FILE IS NOT PLT, OR IS CORRUPTED SOMEHOW, CHECK YO FILES YO, filename: ", filename);
+			exit(EXIT_FAILURE);
+		}
+
+		outportb(DAC_WRITE, index);
+		outportb(DAC_DATA, r);
+		outportb(DAC_DATA, g);
+		outportb(DAC_DATA, b);
+
+		index = 0;
+		r = 0;
+		g = 0;
+		b = 0;
+	}
+}
+
 void get_pallette(unsigned char* pallette, int start_index ,int end_index)
 {
 	int i;
@@ -63,7 +208,6 @@ void get_pallette(unsigned char* pallette, int start_index ,int end_index)
 			*(pallette+(i*3)+j) = inportb(DAC_DATA);
 		}
 	}
-	return pallette;
 }
 
 unsigned char get_color(unsigned char color_index)
@@ -638,28 +782,174 @@ void print_string(int x, int y, int color, char *string, int transparent)
 	}
 }
 
-char* inttostring(int i, char b[])
-{
-	char const digit[] = "0123456789";
-	char* p = b;
-	int shifter = i;
+void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int y_size)
+{	
+	FILE * file;
+	int current_char;
+	int i;
+	int j;
 
-	if(i<0)
+	int x;
+	int y;
+
+	int current_number = 0;
+
+	int format_error = 0;
+
+	int file_x = 0;
+	int file_y = 0;
+
+	file = fopen(filename, "r");
+
+	if(file == NULL)
 	{
-		*p++ = '-';
-		i*= -1;
+		set_graphics_mode(TEXT_MODE);
+		printf("ERROR OPENING FILE: %s", filename);
+		exit(EXIT_FAILURE);
 	}
 
-	do
+	current_char = fgetc(file);
+	if(current_char != 'P')format_error = 1;
+	current_char = fgetc(file);
+	if(current_char != '2')format_error = 1;
+	current_char = fgetc(file);
+	if(current_char != '\n')format_error = 1;
+
+	for(i= 0; i<4;i++)
+	{	
+		current_char = fgetc(file);
+		if(current_char >= 48 && current_char <= 58)
+		{
+			file_x = file_x*10 + current_char - 48;
+			
+		}
+		else if(current_char == 32)
+		{
+			break;
+		}
+		else
+		{
+			format_error = 1;
+		}
+	}
+
+	if(file_x != x_size)
 	{
-		++p;
-		shifter = shifter/10;
-	}while(shifter);
-	*p = '\0';
-	do
+		set_graphics_mode(TEXT_MODE);
+		printf("WRONG X SIZE FOR %s", filename);
+		printf("EXPECTING %d", x_size);
+		printf("GOT %d", file_x);
+		exit(EXIT_FAILURE);
+	}
+	for(i= 0; i<4;i++)
+	{	
+		current_char = fgetc(file);
+		if(current_char >= 48 && current_char <= 58)
+		{
+			file_y = file_y*10 + current_char - 48;
+		}
+		else if(current_char == '\n')
+		{
+			break;
+		}
+		else
+		{
+			format_error = 1;
+		}
+	}
+
+	if(file_y != y_size)
 	{
-		*--p = digit[i%10];
-		i = i/10;
-	}while(i);
-	return b;
+		set_graphics_mode(TEXT_MODE);
+		printf("WRONG Y SIZE FOR %s", filename);
+		printf("EXPECTING %d", y_size);
+		printf("GOT %d", file_y);
+		exit(EXIT_FAILURE);
+	}
+
+	for(i= 0; i<4;i++)
+	{	
+		current_char = fgetc(file);
+		if(current_char >= 48 && current_char <= 58)
+		{
+			current_number = current_number*10 + current_char - 48;
+		}
+		else if(current_char == '\n')
+		{
+			break;
+		}
+		else
+		{
+			format_error = 1;
+		}
+	}
+
+	for(y = 0; y< y_size; y++)
+	{
+		for(x = 0; x < x_size; x++)
+		{
+			outport(SEQUENCER, ((0x1<<(x%4))<<8)+0x02);
+			for(j = 0; j<4; j++)
+			{	
+				current_char = fgetc(file);
+				if(current_char >= 48 && current_char <= 58)
+				{
+					current_number = current_number*10 + current_char - 48;
+				}
+				else if(current_char == '\n')
+				{
+					break;
+				}
+				else
+				{
+					format_error = 1;
+				}
+			}
+			*(allocated_mem+(y*x_size>>2)+(x>>2)) = (unsigned char)current_number;		
+			current_number = 0;
+		}
+	}
+
+	if(format_error == 1)
+	{
+		set_graphics_mode(TEXT_MODE);
+		printf("FILE IS NOT PGM, OR IS CORRUPTED SOMEHOW, CHECK YO FILES YO, filename: ", filename);
+		exit(EXIT_FAILURE);
+	}
+}
+
+void copy_vmem_to_fbuffer(unsigned char far * location, int x_pos, int y_pos, int x_size, int y_size)
+{
+	unsigned char current_pixel = 0;
+
+	int src_plane = 0;
+	int dest_plane = 0;
+
+	int dest_offset = 0;
+
+	int x;
+	int y;
+
+	dest_plane = x_pos%4;
+
+	for(src_plane = 0; src_plane<4; src_plane++, dest_plane++)
+	{
+
+		if(dest_plane >=4)
+		{
+			dest_plane = 0;
+			dest_offset += 1;
+		}
+		for(x=0; x<x_size>>2; x++)	
+		{
+			for(y=0; y<y_size; y++)
+			{
+				outport(GFX_CONTROLLER, (src_plane<<8)+0x04);
+				current_pixel = *(location+(y*(x_size>>2))+x);
+				outport(SEQUENCER, ((0x1<<dest_plane)<<8)+0x02);
+			
+				*(frame_buffer+x_pos + dest_offset +y_pos*(SCREEN_WIDTH>>2) + y*(SCREEN_WIDTH>>2) + x) = current_pixel;
+			}	
+		}
+	}
 }
