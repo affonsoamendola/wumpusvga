@@ -867,6 +867,8 @@ void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int
 		exit(EXIT_FAILURE);
 	}
 
+	current_number = 0;
+
 	for(i= 0; i<4;i++)
 	{	
 		current_char = fgetc(file);
@@ -884,6 +886,8 @@ void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int
 		}
 	}
 
+	current_number = 0;
+
 	for(y = 0; y< y_size; y++)
 	{
 		for(x = 0; x < x_size; x++)
@@ -892,6 +896,7 @@ void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int
 			for(j = 0; j<4; j++)
 			{	
 				current_char = fgetc(file);
+
 				if(current_char >= 48 && current_char <= 58)
 				{
 					current_number = current_number*10 + current_char - 48;
@@ -918,7 +923,14 @@ void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int
 	}
 }
 
-void copy_vmem_to_fbuffer(unsigned char far * location, int x_pos, int y_pos, int x_size, int y_size)
+void copy_vmem_to_dbuffer(	unsigned char far * location, 
+							int x_pos_fbuffer, 
+							int y_pos_fbuffer, 
+							int x_offset_start_vmem, 
+							int y_offset_start_vmem,
+							int x_offset_end_vmem,
+							int y_offset_end_vmem,
+							int x_vmem_size)
 {
 	unsigned char current_pixel = 0;
 
@@ -926,29 +938,56 @@ void copy_vmem_to_fbuffer(unsigned char far * location, int x_pos, int y_pos, in
 	int dest_plane = 0;
 
 	int dest_offset = 0;
+	int src_offset = 0;
 
 	int x;
 	int y;
 
-	dest_plane = x_pos%4;
+	int i;
 
-	for(src_plane = 0; src_plane<4; src_plane++, dest_plane++)
+	src_plane = x_offset_start_vmem%4;
+	dest_plane = x_pos_fbuffer%4;
+
+	for(i = 0; i<4; i++, src_plane++, dest_plane++)
 	{
-
+		if(src_plane >=4)
+		{
+			src_plane = 0;
+			src_offset += 1;
+		}
 		if(dest_plane >=4)
 		{
 			dest_plane = 0;
 			dest_offset += 1;
 		}
-		for(x=0; x<x_size>>2; x++)	
+
+		outport(GFX_CONTROLLER, (src_plane<<8)+0x04);
+		outport(SEQUENCER, ((0x1<<dest_plane)<<8)+0x02);
+
+		for(x=0; x<(x_offset_end_vmem-x_offset_start_vmem); x++)	
 		{
-			for(y=0; y<y_size; y++)
+			for(y=0; y<(y_offset_end_vmem-y_offset_start_vmem); y++)
 			{
-				outport(GFX_CONTROLLER, (src_plane<<8)+0x04);
-				current_pixel = *(location+(y*(x_size>>2))+x);
-				outport(SEQUENCER, ((0x1<<dest_plane)<<8)+0x02);
-			
-				*(frame_buffer+x_pos + dest_offset +y_pos*(SCREEN_WIDTH>>2) + y*(SCREEN_WIDTH>>2) + x) = current_pixel;
+				
+				current_pixel = *(location+src_offset+((y+y_offset_start_vmem)*(x_vmem_size>>2))+((x+x_offset_start_vmem)>>2));
+				
+				if(current_pixel != TRANSPARENT_INDEX)
+				{
+					if(x<x_offset_end_vmem-x_offset_start_vmem)
+					{
+						*(	draw_buffer + 
+							(x_pos_fbuffer>>2) + 
+							dest_offset +
+							y_pos_fbuffer*(SCREEN_WIDTH>>2) + 
+							y*(SCREEN_WIDTH>>2) + 
+							(x>>2))
+							 = current_pixel;
+
+					}
+
+					
+					
+				}
 			}	
 		}
 	}
