@@ -89,6 +89,9 @@ int hole[boardSizeX][boardSizeY];
 int current_draw_buffer_page;
 int current_frame_buffer_page;
 
+unsigned char far * title_mem_location = 0xA000E100L;
+unsigned char far * sprites_mem_location = 0xA000FC00L;
+
 void print_order_info();
 
 int main()
@@ -102,24 +105,29 @@ int main()
 	int wumpusDead = 0;
 	int i,j,k;
 
-	unsigned char far * image_mem_location = 0xA000E101L;
-
 	unsigned char* color_pallette;
 	unsigned char* color_temp;
 
 	set_graphics_mode(GRAPHICS_MODEX);
+
 	draw_page(0);
-	frame_page(0);
+	frame_page(1);
 	color_pallette = malloc(256*3);
+
 	get_pallette(color_pallette, 0, 255);
 	load_pallette("plt/TITLE.PLT", 12);
+	load_pallette("plt/SPRITES.PLT", 16);
 
-	load_pgm("graphix/title.pgm", image_mem_location, 216, 124);
-	copy_vmem_to_fbuffer(image_mem_location, 0, 1, 216, 124);
+	load_pgm("graphix/title.pgm", title_mem_location, 216, 124);
+	load_pgm("graphix/sprites.pgm", sprites_mem_location, 60, 40);
 
-	getch();
-	
-	fill_rectangle(10,320,95,105,0);
+	copy_vmem_to_dbuffer(title_mem_location, (SCREEN_WIDTH>>1)-(216>>1), (SCREEN_HEIGHT>>1)-(124>>1), 0, 0, 216, 124, 216);
+	print_string((SCREEN_WIDTH>>1)-100,227,40,"By Affonso Amendola, 2018",1);
+	frame_page(0);
+
+	delay(4000);
+	fill_screen(0);
+
 	print_string(10,96,40,"CHOOSE YOUR CHALLENGE LEVEL:",1);
 	print_string(10,106,40,"E:EASY  M:MEDIUM  H:HARD  U:ULTRA",1);
 	key = 'o';
@@ -725,11 +733,20 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 			}
 			if(x==playerPosX && y==playerPosY)
 			{
-				fill_rectangle(	boardPosX+(x*boardSquareSize),
+				/*fill_rectangle(	boardPosX+(x*boardSquareSize),
 						boardPosX+((x+1)*boardSquareSize)-1,
 						boardPosY+(y*boardSquareSize),
 						boardPosY+((y+1)*boardSquareSize)-1,
-						playerColor);
+						playerColor);*/
+
+				copy_vmem_to_dbuffer(	sprites_mem_location,
+										boardPosX+(x*boardSquareSize), 
+										boardPosY+(y*boardSquareSize), 
+										0, 
+										0, 
+										10, 
+										10, 
+										60);	
 			}
 			if(visited[x][y]==0 && (x>0&&y>0&&x<boardSizeX&&y<boardSizeY))
 			{
@@ -763,14 +780,6 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 						boardPosY+(y*boardSquareSize),
 						boardPosY+((y+1)*boardSquareSize)-1,
 						200);
-			}
-			if(x==playerPosX && y==playerPosY)
-			{
-				fill_rectangle(	boardPosX+(x*boardSquareSize),
-						boardPosX+((x+1)*boardSquareSize)-1,
-						boardPosY+(y*boardSquareSize),
-						boardPosY+((y+1)*boardSquareSize)-1,
-						playerColor);
 			}
 		}
 	}

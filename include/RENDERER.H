@@ -55,6 +55,8 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 
+#define TRANSPARENT_INDEX   0
+
 extern int current_frame_buffer_page;
 extern int current_draw_buffer_page;
 
@@ -83,6 +85,12 @@ void print_string(int x, int y, int color, char *string, int transparent);
 
 void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int y_size);
 
-void copy_vmem_to_fbuffer(unsigned char far * location, int x_pos, int y_pos, int x_size, int y_size);
-
+void copy_vmem_to_dbuffer(  unsigned char far * location, 
+                            int x_pos_fbuffer, 
+                            int y_pos_fbuffer, 
+                            int x_offset_start_vmem, 
+                            int y_offset_start_vmem,
+                            int x_offset_end_vmem,
+                            int y_offset_end_vmem,
+                            int x_vmem_size);
 #endif /* RENDERER_H */
