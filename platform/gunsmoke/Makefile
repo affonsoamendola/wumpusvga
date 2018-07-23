@@ -22,20 +22,20 @@ wumpus.xpm: wumpus.xcf
 	xcf2png wumpus.xcf -o wumpus.png
 	convert wumpus.png wumpus.xpm
 
-patch_CGROM: wumpus.xpm patch_CGROM.c include/char_codes.h
-	$(CC) -I include patch_CGROM.c -o patch_CGROM
+patch_CGROM: wumpus.xpm patch_CGROM.c char_codes.h
+	$(CC) patch_CGROM.c -o patch_CGROM
 
 gs01.11f: patch_CGROM
-	cp $(ROMPATH)/gunsmoke/gs01.11f .
+	cp $(ROMPATH)/gunsmoke/11f_gs01.bin gs01.11f
 	./patch_CGROM
 	cp gs01.11f $(ROMPATH)/gunsmoke/
 
-gunsmoke.rel: gunsmoke.c include/char_codes.h
-	$(Z80COMPILER) -I include -mz80 -c gunsmoke.c
+gunsmoke.rel: gunsmoke.c char_codes.h
+	$(Z80COMPILER) -mz80 -I ../.. -c gunsmoke.c
 
-wumpus_maincpu.ihex: WUMPUS.C gunsmoke.rel include/char_codes.h boot.rel
-	$(Z80COMPILER) -I include -mz80 -c WUMPUS.C
-	$(Z80COMPILER) -mz80 -o wumpus_maincpu.ihex WUMPUS.rel gunsmoke.rel boot.rel --code-loc 0x0080 --data-loc 0xE000 --no-std-crt0
+wumpus_maincpu.ihex: ../../wumpus.c gunsmoke.rel char_codes.h boot.rel
+	$(Z80COMPILER) -mz80 -I ../.. -c ../../wumpus.c
+	$(Z80COMPILER) -mz80 -o wumpus_maincpu.ihex wumpus.rel gunsmoke.rel boot.rel --code-loc 0x0080 --data-loc 0xE000 --no-std-crt0
 
 3.ic85: wumpus_maincpu.ihex
 	$(OBJCOPY) wumpus_maincpu.ihex -I ihex -O binary 3.ic85

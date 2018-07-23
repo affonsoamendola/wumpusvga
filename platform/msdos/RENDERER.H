@@ -68,7 +68,6 @@ unsigned char get_color(unsigned char color_index);
 
 void set_graphics_mode(int mode);
 
-void fill_screen(int color);
 void set_pixel(int x, int y, int color);
 int get_pixel(int x, int y);
 

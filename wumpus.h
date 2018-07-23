@@ -13,22 +13,36 @@
 #define INPUT_LEVEL_HARD     (1 << 12)
 #define INPUT_LEVEL_ULTRA    (1 << 13)
 
+#ifdef MSDOS
+#define boardSizeX 29
+#define boardSizeY 19
+#endif
+
 int wumpus_main();
 
 // This is the tiny API that must be
 // implemented by platform-specific ports:
 void init_system();
+
+//VIDEO:
 void init_video();
-void display_title_screen();
-void wait_for_user_input();
-void draw_message_box(const char* line1, const char* line2);
-int read_user_input();
-void display_game_over_screen();
-int rand();
-void print_score(char score);
+void clear_screen();
 void fill_screen(char color);
-int abs(int value);
-void drawScreen(int** visited);
-void integer_to_string(int value, char string[8]);
+void display_title_screen();
+void drawScreen(int visited[boardSizeX][boardSizeY]);
+void draw_message_box(const char* line1, const char* line2);
+void display_game_over_screen();
+void print_score(char score);
 void after_gameover();
+
+//INPUT:
+void wait_for_user_input();
+int read_user_input();
+
+//UTILS:
+int abs(int value);
+int rand();
+void integer_to_string(int value, char string[8]);
+
+
 

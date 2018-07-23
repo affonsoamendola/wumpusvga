@@ -20,15 +20,42 @@
 #include <dos.h>
 #include <time.h>
 #include <conio.h>
+#include <wumpus.h>
 #include <RENDERER.H>
+
+extern int hole[boardSizeX][boardSizeY];
+extern int secretExitWall;
+extern int visitedColor;
+extern int boardBorderColor;
+extern int boardSquareSize;
+extern int boardPosX;
+extern int boardPosY;
+extern int playerPosX;
+extern int playerPosY;
+extern int wumpusPosX;
+extern int wumpusPosY;
+extern int arrowPosX;
+extern int arrowPosY;
+extern int hasArrow;
+extern int secretExitX;
+extern int secretExitY;
+extern int goldPosX;
+extern int goldPosY;
+extern int escaping;
+extern int showWumpus;
+extern int showWumpus;
+extern int showGold;
+extern int showHoles;
+
+unsigned char far * title_mem_location = 0xA000E100L;
+unsigned char far * sprites_mem_location = 0xA000FC00L;
+unsigned char* color_pallette;
 
 int main()
 {
+	init_system();
         wumpus_main();
-}
-
-void init_system(){
-	srand(time(NULL));
+	return 0;
 }
 
 void init_video()
@@ -39,6 +66,12 @@ void init_video()
 	frame_page(1);
 }
 
+void init_system(){
+	srand(time(0));
+
+	init_video();
+}
+
 void integer_to_string(int value, char string[8])
 {
 	inttostring(value, string);
@@ -46,9 +79,6 @@ void integer_to_string(int value, char string[8])
 
 void display_title_screen()
 {
-	unsigned char far * title_mem_location = 0xA000E100L;
-	unsigned char far * sprites_mem_location = 0xA000FC00L;
-	unsigned char* color_pallette;
 	color_pallette = malloc(256*3);
 	get_pallette(color_pallette, 0, 255);
 	load_pallette("plt/TITLE.PLT", 12);
@@ -60,8 +90,10 @@ void display_title_screen()
 
 	print_string((SCREEN_WIDTH>>1)-100,227,40,"By Affonso Amendola, 2018",1);
 	frame_page(0);
+}
 
-	delay(4000);
+void clear_screen()
+{
 	fill_screen(0);
 }
 
@@ -78,16 +110,24 @@ void draw_message_box(const char* line1,
 	print_string(10, 106, 40, line2, 1);
 }
 
+void print_score(char score){
+	//TODO: implement-me!
+}
+
 int read_user_input(){
-	int input = 0
+	int input = 0;
 	switch (getch())
 	{
 		case 'q': input |= INPUT_QUIT_GAME; break;
 		case 'c': input |= INPUT_CHEAT_MENU; break;
 		case 'z': input |= INPUT_ENABLE_CHEAT1; break;
 		case 'x': input |= INPUT_ENABLE_CHEAT2; break;
-		case 'u': input |= INPUT_JOYSTICK_UP; break;
-		case 'h': input |= INPUT_JOYSTICK_LEFT; break;
+		case 'u': input |= (INPUT_JOYSTICK_UP |
+		                    INPUT_LEVEL_ULTRA); break;
+		case 'h': input |= (INPUT_JOYSTICK_LEFT |
+		                    INPUT_LEVEL_HARD); break;
+		case 'e': input |= INPUT_LEVEL_EASY; break;
+		case 'm': input |= INPUT_LEVEL_MEDIUM; break;
 		case 'j': input |= INPUT_JOYSTICK_DOWN; break;
 		case 'k': input |= INPUT_JOYSTICK_RIGHT; break;
 		case 'f': input |= INPUT_ACTION_FIRE; break;
@@ -98,6 +138,7 @@ int read_user_input(){
 }
 
 void display_game_over_screen(){
+	int x,y;
 	for(x=0;x<320;x++)
 	{
 		for(y=0;y<240;y++)
@@ -106,6 +147,7 @@ void display_game_over_screen(){
 		}
 	}
 }
+
 void drawScreen(int visited[boardSizeX][boardSizeY])
 {
 	int x;
@@ -177,7 +219,7 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 		}
 	}
 
-	if(escape == 1)
+	if(escaping)
 	{
 		if(secretExitWall == 0)
 		{
@@ -216,7 +258,7 @@ void drawScreen(int visited[boardSizeX][boardSizeY])
 
 void print_order_info()
 {
-	int i =0;
+	int i = 0;
 
 	textcolor(WHITE);
 	cprintf("\n");

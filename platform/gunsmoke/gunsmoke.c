@@ -49,16 +49,18 @@ int scroll_x_pos;
 
 //routine for placing a character on screen
 void set_char(int x, int y, char char_code, char color){
-	*(COLORRAM + 32*y + x) = color;
-	*(VIDEORAM + 32*y + x) = char_code;
+	*(COLORRAM + 32 * x + (32 - y)) = color;
+	*(VIDEORAM + 32 * x + (32 - y)) = char_code;
 }
+
+#define UPPERCASE(ascii) (ascii & ~0b00100000)
 
 // Routine to print a line of text at a
 // given screen coordinate
 void print_line(char* str, int x, int y, char color){
 	char* ptr = str;
 	while (*ptr != 0){
-		set_char(x, y++, *(ptr++) - 55, color);
+		set_char(x++, y, UPPERCASE(*(ptr++)) - 55, color);
 	}
 }
 
@@ -82,33 +84,33 @@ void clear_screen(){
 #define boardSizeX 24
 #define boardSizeY 28
 
-#define out_of_screen__left 2
+#define out_of_screen__top 2
 void draw_scenario(){
 	int x,y;
 
-	set_char(0, out_of_screen__left, CORNER_BOTTOM_LEFT,  SCENARIO_COLOR);
-	set_char(0, out_of_screen__left + SCENARIO_WIDTH-1, CORNER_TOP_LEFT,  SCENARIO_COLOR);
-	set_char(SCENARIO_HEIGHT-1, out_of_screen__left, CORNER_TOP_LEFT,  SCENARIO_COLOR);
-	set_char(SCENARIO_HEIGHT-1, out_of_screen__left + SCENARIO_WIDTH-1, CORNER_TOP_RIGHT,  SCENARIO_COLOR);
+	set_char(                   2,                     1, CORNER_TOP_LEFT,      SCENARIO_COLOR);
+	set_char(                   2, SCENARIO_HEIGHT-1 + 1, CORNER_BOTTOM_LEFT,   SCENARIO_COLOR);
+	set_char(SCENARIO_WIDTH-1 + 2,                     1, CORNER_TOP_RIGHT,     SCENARIO_COLOR);
+	set_char(SCENARIO_WIDTH-1 + 2, SCENARIO_HEIGHT-1 + 1, CORNER_BOTTOM_RIGHT,  SCENARIO_COLOR);
 
-	for (x=1; x<SCENARIO_HEIGHT/2; x++){
-		set_char(x, out_of_screen__left, LEFT_BORDER__BOTTOM,  SCENARIO_COLOR);
-		set_char(x, out_of_screen__left + SCENARIO_WIDTH-1, RIGHT_BORDER__BOTTOM,  SCENARIO_COLOR);
+	for (x=1; x<SCENARIO_WIDTH/2; x++){
+		set_char(x + 2,                     1,    TOP_BORDER__LEFT,  SCENARIO_COLOR);
+		set_char(x + 2, SCENARIO_HEIGHT-1 + 1, BOTTOM_BORDER__LEFT,  SCENARIO_COLOR);
 	}
 
-	for (x=SCENARIO_HEIGHT/2; x<SCENARIO_HEIGHT-1; x++){
-		set_char(x, out_of_screen__left, LEFT_BORDER__TOP,  SCENARIO_COLOR);
-		set_char(x, out_of_screen__left + SCENARIO_WIDTH-1, RIGHT_BORDER__TOP,  SCENARIO_COLOR);
+	for (x=SCENARIO_WIDTH/2; x<SCENARIO_WIDTH-1; x++){
+		set_char(x + 2,                     1,    TOP_BORDER__RIGHT,  SCENARIO_COLOR);
+		set_char(x + 2, SCENARIO_HEIGHT-1 + 1, BOTTOM_BORDER__RIGHT,  SCENARIO_COLOR);
 	}
 
-	for (y=1; y<SCENARIO_WIDTH/2; y++){
-		set_char(SCENARIO_HEIGHT-1, out_of_screen__left + y, TOP_BORDER__LEFT,  SCENARIO_COLOR);
-		set_char(0, out_of_screen__left + y, BOTTOM_BORDER__LEFT,  SCENARIO_COLOR);
+	for (y=1; y<SCENARIO_HEIGHT/2; y++){
+		set_char(                   2, y + 1, TOP_BORDER__LEFT,   SCENARIO_COLOR);
+		set_char(SCENARIO_WIDTH-1 + 2, y + 1, TOP_BORDER__RIGHT,  SCENARIO_COLOR);
 	}
 
-	for (y=SCENARIO_WIDTH/2; y<SCENARIO_WIDTH-1; y++){
-		set_char(SCENARIO_HEIGHT-1, out_of_screen__left + y, TOP_BORDER__RIGHT,  SCENARIO_COLOR);
-		set_char(0, out_of_screen__left + y, BOTTOM_BORDER__RIGHT,  SCENARIO_COLOR);
+	for (y=SCENARIO_HEIGHT/2; y<SCENARIO_HEIGHT-1; y++){
+		set_char(                   2, y + 1, BOTTOM_BORDER__LEFT,   SCENARIO_COLOR);
+		set_char(SCENARIO_WIDTH-1 + 2, y + 1, BOTTOM_BORDER__RIGHT,  SCENARIO_COLOR);
 	}
 }
 
@@ -151,13 +153,14 @@ int read_user_input(){
 	                  INPUT_ACTION_GET |
 	                  INPUT_ACTION_FIRE)))
 	{
-		p1 = ~(~input_map ^ *P1);
+		p1 = *P1;
 		dsw1 = *DSW1;
 
-		if (p1 & (1 << 0)) input |= INPUT_JOYSTICK_UP;
-		if (p1 & (1 << 1)) input |= INPUT_JOYSTICK_LEFT;
-		if (p1 & (1 << 2)) input |= INPUT_JOYSTICK_DOWN;
-		if (p1 & (1 << 3)) input |= INPUT_JOYSTICK_UP;
+		if ((p1 & (1 << 0)) == 0) input |= INPUT_JOYSTICK_UP;
+		if ((p1 & (1 << 1)) == 0) input |= INPUT_JOYSTICK_LEFT;
+		if ((p1 & (1 << 2)) == 0) input |= INPUT_JOYSTICK_DOWN;
+		if ((p1 & (1 << 3)) == 0) input |= INPUT_JOYSTICK_UP;
+
 		if (dsw1 & (1 << 0)) input |= INPUT_ENABLE_CHEAT1;
 		if (dsw1 & (1 << 1)) input |= INPUT_ENABLE_CHEAT2;
 		switch ((dsw1 >> 2) & 3)
@@ -198,13 +201,16 @@ void main_loop(){
 void main_loop()
 {
 	wumpus_main();
+
+	draw_message_box("Debug", "End of Main Loop");
+	while (42) { };
 }
 
 void draw_message_box(const char* line1,
                       const char* line2)
 {
-	print_line(line1, 2, 29, 1);
-	print_line(line2, 2, 30, 2);
+	print_line(line1, 3, 4, 1);
+	print_line(line2, 3, 5, 2);
 }
 
 void display_title_screen()

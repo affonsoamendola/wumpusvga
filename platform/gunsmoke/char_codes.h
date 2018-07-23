@@ -1,7 +1,10 @@
 enum {
 	BLANK_CHAR = 0,
 
-	PLAYER,
+/* Tile IDs from 10 to 36 correspond to the uppercase chars
+*/
+
+	PLAYER = 37,
 	WUMPUS_AWAKEN,
 	WUMPUS_SLEEPING1,
 	WUMPUS_SLEEPING2,
