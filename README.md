@@ -3,7 +3,7 @@ A version of the classic Hunt the Wumpus for VGA PC-Compatibles running DOS made
 
 Mainly used the help of this book to understand how the VGA systems worked, really recommend it https://archive.org/details/BlackArt3DEBook
 
-I built and edited it using Borland's Turbo C++, so I dont really know if it works using any other compilers, I suppose Microsoft's C/C++ should work fine too.
+I compiled it using Borland's Turbo C++ 3.0, so I dont really know if it works using any other compilers, I suppose Microsoft's C/C++ should work fine too.
 
 Thanks for playing/being interested in this software.
 
