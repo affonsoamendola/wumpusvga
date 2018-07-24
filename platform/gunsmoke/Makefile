@@ -31,11 +31,11 @@ gs01.11f: patch_CGROM
 	cp gs01.11f $(ROMPATH)/gunsmoke/
 
 gunsmoke.rel: gunsmoke.c char_codes.h
-	$(Z80COMPILER) -mz80 -I ../.. -c gunsmoke.c
+	$(Z80COMPILER) -mz80 -DGUNSMOKE -I ../.. -c gunsmoke.c
 
 wumpus_maincpu.ihex: ../../wumpus.c gunsmoke.rel char_codes.h boot.rel
-	$(Z80COMPILER) -mz80 -I ../.. -c ../../wumpus.c
-	$(Z80COMPILER) -mz80 -o wumpus_maincpu.ihex wumpus.rel gunsmoke.rel boot.rel --code-loc 0x0080 --data-loc 0xE000 --no-std-crt0
+	$(Z80COMPILER) -mz80 -DGUNSMOKE -I ../.. -c ../../wumpus.c
+	$(Z80COMPILER) -mz80 -DGUNSMOKE -o wumpus_maincpu.ihex wumpus.rel gunsmoke.rel boot.rel --code-loc 0x0080 --data-loc 0xE000 --no-std-crt0
 
 3.ic85: wumpus_maincpu.ihex
 	$(OBJCOPY) wumpus_maincpu.ihex -I ihex -O binary 3.ic85

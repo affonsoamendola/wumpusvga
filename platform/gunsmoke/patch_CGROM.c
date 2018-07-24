@@ -29,6 +29,8 @@ void save_tile(int x, int y, int tile_number){
 int main(){
 	fp = fopen("gs01.11f", "r+");
 
+	save_tile(0, 0, BLANK_CHAR);
+
 	save_tile(5, 1, OPEN_FLOOR);
 	save_tile(6, 1, HIDDEN_FLOOR);
 

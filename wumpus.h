@@ -18,10 +18,21 @@
 #define boardSizeY 19
 #endif
 
-int wumpus_main();
+#ifdef GUNSMOKE
+#define boardSizeX 25
+#define boardSizeY 25
+#endif
 
-// This is the tiny API that must be
+//----------------------------------------------------
+//These are public functions implemented at wumpus.c:
+int wumpus_main();
+void set_game_level(int level);
+
+//----------------------------------------------------
+// And this is the tiny API that must be
 // implemented by platform-specific ports:
+
+//SYSTEM:
 void init_system();
 
 //VIDEO:
@@ -43,6 +54,4 @@ int read_user_input();
 int abs(int value);
 int rand();
 void integer_to_string(int value, char string[8]);
-
-
 

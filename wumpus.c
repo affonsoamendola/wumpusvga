@@ -39,7 +39,7 @@ int secretExitY;
 int goldPosX;
 int goldPosY;
 int difficulty = 1;
-int holeNumber = 3;
+int holeNumber = 6;
 int wumpusDistance = 0;
 int score = 0;
 int escaping = 0;
@@ -62,6 +62,17 @@ char score_string[8];
 int input;
 int x, y;
 
+void set_game_level(int level)
+{
+	switch(level % 4)
+	{
+		case 0: difficulty = 1; holeNumber = 6; break;
+		case 1: difficulty = 2; holeNumber = 10; break;
+		case 2: difficulty = 3; holeNumber = 18; break;
+		case 3: difficulty = 4; holeNumber = 34; break;
+	}
+}
+
 void select_level()
 {
 	clear_screen();
@@ -75,10 +86,10 @@ void select_level()
 	                 INPUT_LEVEL_ULTRA )))
 	{
 		input = read_user_input();
-		if(input & INPUT_LEVEL_EASY){   difficulty = 1; holeNumber = 6;}
-		if(input & INPUT_LEVEL_MEDIUM){ difficulty = 2; holeNumber = 10;}
-		if(input & INPUT_LEVEL_HARD){   difficulty = 3; holeNumber = 18;}
-		if(input & INPUT_LEVEL_ULTRA){  difficulty = 4; holeNumber = 34;}
+		if(input & INPUT_LEVEL_EASY)   set_game_level(0);
+		if(input & INPUT_LEVEL_MEDIUM) set_game_level(1);
+		if(input & INPUT_LEVEL_HARD)   set_game_level(2);
+		if(input & INPUT_LEVEL_ULTRA)  set_game_level(3);
 		if(input & INPUT_CHEAT_MENU)
 		{
 			cheats = 1;
@@ -105,6 +116,10 @@ void init_game_params(){
 
 	do
 	{
+		goldPosX = rand() % (boardSizeX - 2) + 1;
+		goldPosY = rand() % (boardSizeY - 2) + 1;
+		playerPosX = rand() % (boardSizeX - 2) + 1;
+		playerPosY = rand() % (boardSizeY - 2) + 1;
 		wumpusPosX = rand() % (boardSizeX - 2) + 1;
 		wumpusPosY = rand() % (boardSizeY - 2) + 1;
 	}
@@ -490,7 +505,7 @@ void game_loop()
 	draw_page(!current_draw_buffer_page);
 #endif
 	fill_screen(0);
-	draw_message_box("FOFONSO`S WUMPUS HUNT", "");
+	draw_message_box("FOFONSO S WUMPUS HUNT", "");
 	print_score(score);
 	drawScreen(visited);
 	display_contextual_messages();
@@ -512,8 +527,9 @@ int wumpus_main()
 	display_title_screen();
 	wait_for_user_input();
 
+#ifdef MSDOS
 	select_level();
-
+#endif
 	init_game_params();
 
 	while (gameRunning) game_loop();
