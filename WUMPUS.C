@@ -82,8 +82,8 @@ int safetyCounter = 0;
 int visited[boardSizeX][boardSizeY];
 int hole[boardSizeX][boardSizeY];
 
-int current_draw_buffer_page;
-int current_frame_buffer_page;
+int current_frame_buffer_page = 1;
+int current_draw_buffer_page = 0; 
 
 int gameRunning = 1;
 
@@ -170,11 +170,12 @@ void move_player(int direction)
 	if(	playerPosX == 0 || playerPosX == boardSizeX-1 ||
 		playerPosY == 0 || playerPosY == boardSizeY-1)
 	{
-		if((state_flags & STATE_ESCAPE != 0) && ( ((secretExitWall == 0 || secretExitWall == 2) && playerPosX == secretExitX) ||
-						   				  		 ((secretExitWall == 1 || secretExitWall == 3) && playerPosY == secretExitY)))
+		if((state_flags & STATE_ESCAPE != 0) && ( ((secretExitWall == DIRECTION_UP || secretExitWall == DIRECTION_DOWN) && playerPosX == secretExitX) ||
+						   				  		 ((secretExitWall == DIRECTION_LEFT || secretExitWall == DIRECTION_RIGHT) && playerPosY == secretExitY)))
 		{
 			score += 1000;
 			state_flags |= STATE_GAME_OVER;
+			state_flags |= STATE_WIN;
 		}
 		else 
 		{
@@ -182,7 +183,8 @@ void move_player(int direction)
 			playerPosY = lastPositionY;
 		}
 	}
-	else if(visited[playerPosX][playerPosY] == 0)
+
+	if(visited[playerPosX][playerPosY] == 0)
 	{
 		score += 10*difficulty;
 		visited[playerPosX][playerPosY] = 1;
@@ -251,30 +253,25 @@ void fire_arrow(int direction)
 			break;
 	}
 
-	if(hitMonster)
-	{
-		state_flags &= ~STATE_HAS_ARROW;
-		
-		if(state_flags & STATE_WUMPUS_DEAD == 0)
-		{
-			state_flags |= STATE_WUMPUS_DEAD;
-			show_message_box(	"YOU HEAR A HORRIFYING SCREAM",
-							( (SCREEN_HEIGHT >> 1) - ((8+4) >> 1) ), 
-							40);
-			getch();
-			arrowPosX = wumpusPosX;
-			arrowPosY = wumpusPosY;
-		}
-		else
-		{
-			show_message_box(	"YOU SEE YOUR ARROW HEAD INTO THE DARKNESS...",
-							( (SCREEN_HEIGHT >> 1) - ((8+4) >> 1) ), 
-							40);
-			getch();
-			arrowPosX = dropPositionX;
-			arrowPosY = dropPositionY;
 
-		}
+	show_message_box(	"YOU SEE YOUR ARROW HEAD INTO THE DARK",
+							( (SCREEN_HEIGHT >> 1) - ((8+4) >> 1) ), 
+							40);
+	getch();
+	arrowPosX = dropPositionX;
+	arrowPosY = dropPositionY;
+
+	state_flags &= ~STATE_HAS_ARROW;
+
+	if(hitMonster && (state_flags & STATE_WUMPUS_DEAD) == 0)
+	{
+		state_flags |= STATE_WUMPUS_DEAD;
+		show_message_box(	"YOU HEAR A HORRIFYING SCREAM",
+						( (SCREEN_HEIGHT >> 1) - ((8+4) >> 1) ), 
+						40);
+		getch();
+		arrowPosX = wumpusPosX;
+		arrowPosY = wumpusPosY;
 	}
 }
 
@@ -310,7 +307,7 @@ void init_system()
 
 	get_pallette(color_pallette, 0, 255);
 	load_pallette("plt/TITLE.PLT", 12);
-	load_pallette("plt/SPRITES.PLT", 16);
+	load_pallette("plt/SPRITES.PLT", 27);
 
 	load_pgm("graphix/title.pgm", title_mem_location, 216, 124);
 	load_pgm("graphix/sprites.pgm", sprites_mem_location, 60, 40);
@@ -322,8 +319,7 @@ void init_system()
 	state_flags = 0;
 	state_flags |= STATE_HAS_ARROW;
 
-	game_turn_flags = 0;
-	
+	game_turn_flags = 0;	
 }
 
 void init_board()
@@ -406,8 +402,8 @@ void show_title()
 	copy_vmem_to_dbuffer(	title_mem_location, 
 							(SCREEN_WIDTH>>1)-(216>>1), 
 							(SCREEN_HEIGHT>>1)-(124>>1), 
-							0, 0, 
-							216, 124, 
+							0, 216, 
+							0, 124, 
 							216);
 
 	print_string((SCREEN_WIDTH>>1)-100,227,40,"By Affonso Amendola, 2018",1);
@@ -415,7 +411,7 @@ void show_title()
 	frame_page(0);
 
 	getch();
-	//delay(1);
+
 	fill_screen(0);
 }
 
@@ -541,10 +537,13 @@ int main()
 	}
 
 	init_board();
-	
+
 	while ((state_flags & STATE_GAME_OVER) == 0)
 	{	
-		draw_screen();
+		while(!kbhit())
+		{
+			draw_screen();
+		}	
 		handle_input();
 		update_logic();
 	}
@@ -557,38 +556,40 @@ int main()
 
 void draw_end_screen()
 {
-	draw_page(!current_draw_buffer_page);
+	fill_screen(0);
+	flip_draw_page();
+	load_pallette("plt/RAINBOW.PLT", 256);
 
 	for(x=0;x<320;x++)
 	{
 		for(y=0;y<240;y++)
 		{
-			set_pixel(x,y,(int)( (y*x) * (200.0 / (320.0*240.0) )  ) + 55);
+			set_pixel(x,y,(int)( ((float)(y)*(float)(x)) * (255.0 / (320.0*240.0) )  ));
 		}
 	}
 
-	fill_rectangle(0,320,84,134,0);
+	fill_rectangle(0,320,84,134,150);
 
 	if((state_flags & STATE_EATEN) != 0)
 	{
-		print_string(10,86,40,"YOU GOT EATEN BY THE WUMPUS",1);
+		print_string(10,86,30,"YOU GOT EATEN BY THE WUMPUS",1);
 	}
 	else if((state_flags & STATE_FELL) != 0)
 	{
-		print_string(10,86,40,"YOU FELL IN A HOLE AND DIED",1);
+		print_string(10,86,30,"YOU FELL IN A HOLE AND DIED",1);
 	}
 	
 	if((state_flags & STATE_WIN) != 0)
 	{
-		print_string(10,86,40,"YOU WIN! CONGRATULATIONS!",1);
+		print_string(10,86,30,"YOU WIN! CONGRATULATIONS!",1);
 	}
-	print_string(10,96,40,"GAME OVER",1);
-	print_string(10,106,40,"THANK YOU FOR PLAYING",1);
-	print_string(10,116,40,"YOUR SCORE:",1);
-	print_string(104,116,40,inttostring(score,scoreChar),1);
-	print_string(10,126,40,"PRESS ANY KEY TO RETURN TO DOS",1);
+	print_string(10,96,30,"GAME OVER",1);
+	print_string(10,106,30,"THANK YOU FOR PLAYING",1);
+	print_string(10,116,30,"YOUR SCORE:",1);
+	print_string(104,116,30,inttostring(score,scoreChar),1);
+	print_string(10,126,30,"PRESS ANY KEY TO RETURN TO DOS",1);
 	
-	frame_page(!current_frame_buffer_page);
+	frame_page(current_draw_buffer_page);
 
 	color_pallette = malloc(255*3);
 	color_temp = malloc(1*3);
@@ -598,9 +599,9 @@ void draw_end_screen()
 
 		delay(50);	
 		
-		get_pallette(color_pallette,56,255);	
-		get_pallette(color_temp,55,55);
-		set_pallette(color_pallette,55,254);
+		get_pallette(color_pallette,1,255);	
+		get_pallette(color_temp,0,0);
+		set_pallette(color_pallette,0,254);
 		set_pallette(color_temp,255,255);
 		
 	}
@@ -613,6 +614,12 @@ void update_logic()
 {
 	game_turn_flags = 0;
 
+	if(	(state_flags & STATE_ESCAPE) 		!= 0 && 
+		(state_flags & STATE_WUMPUS_DEAD) 	== 0)
+	{
+			wumpusAI();
+	}
+
 	if(	(playerPosX+1 == wumpusPosX && playerPosY == wumpusPosY) ||
 	 	(playerPosX-1 == wumpusPosX && playerPosY == wumpusPosY) ||
  		(playerPosY+1 == wumpusPosY && playerPosX == wumpusPosX) ||
@@ -624,19 +631,22 @@ void update_logic()
 
 	wumpus_distance = abs(playerPosX-wumpusPosX) + abs(playerPosY-wumpusPosY);
 	
-	if(wumpus_distance <2)
+	if(wumpus_distance <3)
 	{
-		wumpus_distance_state = 1;
+		wumpus_distance_state = 0;
 	}
 	else if(wumpus_distance <6)
 	{
-		wumpus_distance_state = 2;
+		wumpus_distance_state = 1;
 	}
 	else if(wumpus_distance <12)
 	{
-		wumpus_distance_state = 3;
+		wumpus_distance_state = 2;
 	}
 	else if(wumpus_distance <22)
+	{
+		wumpus_distance_state = 3;
+	}else
 	{
 		wumpus_distance_state = 4;
 	}
@@ -679,12 +689,6 @@ void update_logic()
 		state_flags |= STATE_GAME_OVER;
 		state_flags |= STATE_EATEN;
 		score -= 300;
-	}
-
-	if(	(state_flags & STATE_ESCAPE) 		!= 0 && 
-		(state_flags & STATE_WUMPUS_DEAD) 	!= 0)
-	{
-			wumpusAI();
 	}
 }
 
@@ -732,11 +736,11 @@ void draw_square(int posX, int posY, int color)
 
 void draw_screen()
 {
-	draw_page(!current_draw_buffer_page);	
-
+	flip_draw_page();
+	
 	fill_screen(0);
 	print_string(10,1,40,"FOFONSO`S WUMPUS HUNT",1);
-	print_string(320-10-8*8,1,40,(char*)itoa(score),1);
+	print_string(320-10-8*8,1,40,inttostring(score,scoreChar),1);
 
 	//DRAW BACKGROUND
 	for(x = 0; x < boardSizeX; x++)
@@ -747,7 +751,186 @@ void draw_screen()
 			if(x == 0 || y == 0 || 
 			   x == boardSizeX-1 || y == boardSizeY-1 )
 			{
-				draw_square(x, y, boardBorderColor);
+
+				//WALLS
+				//TOP LEFT WALL
+				
+				if(x==0 && y==0)
+				{
+					copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            0,
+				                            9,
+				                            10,
+				                            19,
+				                            60);
+
+				}
+				//------------
+				//LEFT WALL
+
+				if(x==0 && (y>0 && y<boardSizeY-1))
+				{
+					
+					if(secretExitWall == DIRECTION_LEFT && y == secretExitY && (state_flags & STATE_ESCAPE))
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            30,
+				                            39,
+				                            20,
+				                            29,
+				                            60);
+					}
+					else
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            0,
+				                            9,
+				                            20,
+				                            29,
+				                            60);
+					}
+				}
+				//------------
+				//BOTTOM LEFT 
+
+				if(x==0 && y==(boardSizeY-1))
+				{
+					copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            0,
+				                            9,
+				                            30,
+				                            39,
+				                            60);
+
+				}
+				//------------
+				//TOP
+				if(y==0 && (x>0 && x<boardSizeX-1))
+				{
+
+					if(secretExitWall == DIRECTION_UP && x == secretExitX && (state_flags & STATE_ESCAPE))
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            30,
+				                            39,
+				                            20,
+				                            29,
+				                            60);
+					}
+					else
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            10,
+				                            19,
+				                            10,
+				                            19,
+				                            60);
+					}
+					
+				}
+				//------------
+				//BOTTOM
+				if(y==(boardSizeY-1) && (x>0 && x<boardSizeX-1))
+				{
+
+					if(secretExitWall == DIRECTION_DOWN && x == secretExitX && (state_flags & STATE_ESCAPE))
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            30,
+				                            39,
+				                            20,
+				                            29,
+				                            60);
+					}
+					else
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+					                            boardPosX + x * boardSquareSize, 
+					                            boardPosY + y * boardSquareSize, 
+					                            10,
+					                            19,
+					                            30,
+					                            39,
+					                            60);
+					}
+
+				}
+
+				//------------
+				//TOP RIGHT
+
+				if(x==(boardSizeX-1) && y==0)
+				{
+					copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            20,
+				                            29,
+				                            10,
+				                            19,
+				                            60);
+
+				}
+
+				//------------
+				//RIGHT
+
+				if(x==(boardSizeX-1) && (y>0 && y<boardSizeY-1))
+				{
+					if(secretExitWall == DIRECTION_RIGHT && y == secretExitY && (state_flags & STATE_ESCAPE))
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            30,
+				                            39,
+				                            20,
+				                            29,
+				                            60);
+					}
+					else
+					{
+						copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            20,
+				                            29,
+				                            20,
+				                            29,
+				                            60);
+					}
+				}
+
+				//------------
+				//BOTTOM RIGHT
+
+				if(x==(boardSizeX-1) && y==(boardSizeY-1))
+				{
+					copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            20,
+				                            29,
+				                            30,
+				                            39,
+				                            60);
+
+				}
+			
 			}
 			else if(x > 0 && x < boardSizeX-1 &&
 					y > 0 && y < boardSizeY-1)
@@ -755,16 +938,40 @@ void draw_screen()
 
 				if(visited[x][y] == 1)
 				{
-					draw_square(x, y, groundColor);
+					copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            10,
+				                            19,
+				                            20,
+				                            29,
+				                            60);
 				}
 				else 
 				{
-					draw_square(x, y, fogColor);
+					copy_vmem_to_dbuffer(   sprites_mem_location, 
+				                            boardPosX + x * boardSquareSize, 
+				                            boardPosY + y * boardSquareSize, 
+				                            30,
+				                            39,
+				                            20,
+				                            29,
+				                            60);
 				}
 
 				if(hole[x][y] == 1 && showHoles == 1)
 				{
 					draw_square(x, y, 40);
+				}
+
+				if(x == wumpusPosX && y == wumpusPosY && showWumpus == 1)
+				{
+					draw_square(x, y, 46);
+				}
+
+				if(x == goldPosX && y == goldPosY && showGold == 1)
+				{
+					draw_square(x, y, 43);
 				}
 			}
 		}
@@ -776,9 +983,9 @@ void draw_screen()
                             boardPosX + playerPosX * boardSquareSize, 
                             boardPosY + playerPosY * boardSquareSize, 
                             0,
+                            9,
                             0,
-                            10,
-                            10,
+                            9,
                             60);
 
 	if(game_turn_flags & FLAG_DRAFT)
@@ -815,8 +1022,43 @@ void draw_screen()
 							SCREEN_HEIGHT-36,
 							40);
 	}
+	if((state_flags & STATE_ESCAPE) && !(state_flags & STATE_WUMPUS_DEAD))
+	{
+		switch(wumpus_distance_state)
+		{
+			case 0:
+				show_message_box(	"YOU HEAR DEATH RIGHT BESIDE YOU", 
+									SCREEN_HEIGHT-36,
+									40);
+				break;
 
-	frame_page(!current_frame_buffer_page);
+			case 1:
+				show_message_box(	"YOU HEAR THE WUMPUS CLOSING IN", 
+									SCREEN_HEIGHT-36,
+									40);
+				break;
+
+			case 2:
+				show_message_box(	"YOU HEAR GROWLING A SHORT DISTANCE AWAY", 
+									SCREEN_HEIGHT-36,
+									40);
+				break;
+
+			case 3:
+				show_message_box(	"YOU HEAR LOUD NOISES IN THE DISTANCE", 
+									SCREEN_HEIGHT-36,
+									40);
+				break;
+
+			default:
+				show_message_box(	"", 
+									SCREEN_HEIGHT-36,
+									40);
+				break;
+		}
+	}
+
+	frame_page(current_draw_buffer_page);
 }
 
 void print_order_info()

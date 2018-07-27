@@ -57,6 +57,9 @@
 
 #define TRANSPARENT_INDEX   0
 
+#define PAGE0 0xA0000000L
+#define PAGE1 0xA0004B00L
+
 extern int current_frame_buffer_page;
 extern int current_draw_buffer_page;
 

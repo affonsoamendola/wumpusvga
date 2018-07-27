@@ -23,8 +23,8 @@
 #include <RENDERER.H>
 #include <FONFLIB.H>
 
-unsigned char far* frame_buffer = 0xA0004B00L;
-unsigned char far* draw_buffer = 0xA0000000L;
+unsigned char far* frame_buffer = PAGE1;
+unsigned char far* draw_buffer = PAGE0;
 unsigned char far* rom_char_set = 0xF000FA6EL;
 
 int current_video_mode = TEXT_MODE;
@@ -179,7 +179,7 @@ void load_pallette(char * filename, int size)
 		if(format_error == 1)
 		{
 			set_graphics_mode(TEXT_MODE);
-			printf("FILE IS NOT PLT, OR IS CORRUPTED SOMEHOW, CHECK YO FILES YO, filename: ", filename);
+			printf("FILE IS NOT PLT, OR IS CORRUPTED SOMEHOW, CHECK YO FILES YO, filename: %s", filename);
 			exit(EXIT_FAILURE);
 		}
 
@@ -547,12 +547,14 @@ void frame_page(int page)
 {
 	if(page == 0)
 	{
-		frame_buffer = (unsigned char far*)0xA0000000L;
+		frame_buffer = (unsigned char far*)PAGE0;
 		current_frame_buffer_page = 0;
-	}else
+
+	}
+
 	if(page == 1)
 	{
-		frame_buffer = (unsigned char far*)0xA0004B00L;
+		frame_buffer = (unsigned char far*)PAGE1;
 		current_frame_buffer_page = 1;
 	}
 
@@ -567,19 +569,51 @@ void frame_page(int page)
        			mov     ax,cx
        			out     dx,ax
 			}
+
+	while(!(inport(ATTR_CONTROLLER_FF)&(1<<3)))
+	{
+	}
+
+	while(inport(ATTR_CONTROLLER_FF)&(1<<3))
+	{
+	}
 }
 
 void draw_page(int page)
 {
 	if(page == 0)
 	{
-		draw_buffer = (unsigned char far*)0xA0000000L;
+		draw_buffer = (unsigned char far*)PAGE0;
 		current_draw_buffer_page = 0;
 	}else
 	if(page == 1)
 	{
-		draw_buffer = (unsigned char far*)0xA0004B00L;
+		draw_buffer = (unsigned char far*)PAGE1;
 		current_draw_buffer_page = 1;
+	}
+}
+
+void flip_draw_page()
+{	
+	if(current_draw_buffer_page == 0)
+	{
+		draw_page(1);
+	}
+	else
+	{
+		draw_page(0);
+	}
+}
+
+void flip_frame_page()
+{	
+	if(current_frame_buffer_page == 0)
+	{
+		frame_page(1);
+	}
+	else
+	{
+		frame_page(0);
 	}
 }
 
@@ -927,8 +961,8 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 							int x_pos_fbuffer, 
 							int y_pos_fbuffer, 
 							int x_offset_start_vmem, 
-							int y_offset_start_vmem,
 							int x_offset_end_vmem,
+							int y_offset_start_vmem,
 							int y_offset_end_vmem,
 							int x_vmem_size)
 {
@@ -964,12 +998,15 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 		outport(GFX_CONTROLLER, (src_plane<<8)+0x04);
 		outport(SEQUENCER, ((0x1<<dest_plane)<<8)+0x02);
 
-		for(x=0; x<(x_offset_end_vmem-x_offset_start_vmem); x++)	
+		for(x=0; x<=(x_offset_end_vmem-x_offset_start_vmem)-i; x+=4)	
 		{
-			for(y=0; y<(y_offset_end_vmem-y_offset_start_vmem); y++)
+			for(y=0; y<=(y_offset_end_vmem-y_offset_start_vmem); y++)
 			{
 				
-				current_pixel = *(location+src_offset+((y+y_offset_start_vmem)*(x_vmem_size>>2))+((x+x_offset_start_vmem)>>2));
+				current_pixel = *(	location +
+									src_offset +
+									((y+y_offset_start_vmem)*(x_vmem_size>>2)) +
+									((x+x_offset_start_vmem)>>2)   );
 				
 				if(current_pixel != TRANSPARENT_INDEX)
 				{
@@ -982,11 +1019,7 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 							y*(SCREEN_WIDTH>>2) + 
 							(x>>2))
 							 = current_pixel;
-
 					}
-
-					
-					
 				}
 			}	
 		}
