@@ -13,3 +13,5 @@ Any questions, suggestions or anything really, please feel free to send me an em
 affonso.gino.neto@usp.br
 
 Affonso Amendola.
+
+Also, check out https://github.com/felipesanches/PortableWumpus for ports of this game for other platforms, by Felipe Sanches
