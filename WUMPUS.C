@@ -25,7 +25,7 @@
 #include <conio.h>
 #include <io.h>
 
-#include <RENDERER.H>
+#include <VGA.H>
 #include <FONFLIB.H>
 
 #define PI 3.14159265

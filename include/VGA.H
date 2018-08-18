@@ -13,8 +13,8 @@
     along with WumpusVGA.  If not, see <https://www.gnu.org/licenses/>
 */
 
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef VGA_H
+#define VGA_H
 
 #define GRAPHICS_MODE13 0x13
 #define GRAPHICS_MODE13DB 0xFE
@@ -96,4 +96,4 @@ void copy_vmem_to_dbuffer(  unsigned char far * location,
                             int x_offset_end_vmem,
                             int y_offset_end_vmem,
                             int x_vmem_size);
-#endif /* RENDERER_H */
+#endif /* VGA_H */
