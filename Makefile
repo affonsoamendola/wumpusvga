@@ -1,4 +1,7 @@
-GAMENAME = Wumpus3D
+#Copyright Affonso Amendola 2018
+#WumpusVGA
+
+GAMENAME = wumpus
 CC = tcc
 RM = rm -f
 

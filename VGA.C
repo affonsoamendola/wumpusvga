@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <conio.h>
 
-#include <RENDERER.H>
+#include <VGA.H>
 #include <FONFLIB.H>
 
 unsigned char far* frame_buffer = PAGE1;
