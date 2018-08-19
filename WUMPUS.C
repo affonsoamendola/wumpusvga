@@ -301,8 +301,6 @@ void init_system()
 {
 	set_graphics_mode(GRAPHICS_MODEX);
 
-	draw_page(0);
-	frame_page(0);
 	color_pallette = malloc(256*3);
 
 	get_pallette(color_pallette, 0, 255);
@@ -313,8 +311,6 @@ void init_system()
 	load_pgm("graphix/sprites.pgm", sprites_mem_location, 60, 40);
 
 	srand(time(NULL));
-
-	
 	
 	state_flags = 0;
 	state_flags |= STATE_HAS_ARROW;
@@ -396,9 +392,7 @@ void init_board()
 
 void show_title()
 {
-	draw_page(0);
-	frame_page(1);
-	
+
 	copy_vmem_to_dbuffer(	title_mem_location, 
 							(SCREEN_WIDTH>>1)-(216>>1), 
 							(SCREEN_HEIGHT>>1)-(124>>1), 
@@ -408,7 +402,7 @@ void show_title()
 
 	print_string((SCREEN_WIDTH>>1)-100,227,40,"By Affonso Amendola, 2018",1);
 	
-	frame_page(0);
+	flip_front_page();
 
 	getch();
 
@@ -513,6 +507,8 @@ int main()
 						(SCREEN_HEIGHT >> 1),
 						40);
 
+	flip_front_page();
+
 	key = 'o';
 	while(!(key == 'e' || key=='m' || key=='h'|| key=='u' ||
 			key == 'E' || key=='M' || key=='H'|| key=='U'))
@@ -533,6 +529,8 @@ int main()
 			show_message_box(	"Z:TOGGLE VIEW  X:GOTO ESCAPE", 
 								SCREEN_HEIGHT - 10,
 								40);
+
+			flip_front_page();
 		}
 	}
 
@@ -557,7 +555,7 @@ int main()
 void draw_end_screen()
 {
 	fill_screen(0);
-	flip_draw_page();
+
 	load_pallette("plt/RAINBOW.PLT", 256);
 
 	for(x=0;x<320;x++)
@@ -588,8 +586,8 @@ void draw_end_screen()
 	print_string(10,116,30,"YOUR SCORE:",1);
 	print_string(104,116,30,inttostring(score,scoreChar),1);
 	print_string(10,126,30,"PRESS ANY KEY TO RETURN TO DOS",1);
-	
-	frame_page(current_draw_buffer_page);
+
+	flip_front_page();
 
 	color_pallette = malloc(255*3);
 	color_temp = malloc(1*3);
@@ -735,9 +733,7 @@ void draw_square(int posX, int posY, int color)
 }
 
 void draw_screen()
-{
-	flip_draw_page();
-	
+{	
 	fill_screen(0);
 	print_string(10,1,40,"FOFONSO`S WUMPUS HUNT",1);
 	print_string(320-10-8*8,1,40,inttostring(score,scoreChar),1);
@@ -1058,7 +1054,7 @@ void draw_screen()
 		}
 	}
 
-	frame_page(current_draw_buffer_page);
+	flip_front_page();
 }
 
 void print_order_info()

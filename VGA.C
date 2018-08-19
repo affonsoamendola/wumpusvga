@@ -23,8 +23,9 @@
 #include <VGA.H>
 #include <FONFLIB.H>
 
-unsigned char far* frame_buffer = PAGE1;
-unsigned char far* draw_buffer = PAGE0;
+unsigned char far* frame_buffer = 0xA0000000;
+unsigned char far* draw_buffer = 0xA0004B00L;
+
 unsigned char far* rom_char_set = 0xF000FA6EL;
 
 int current_video_mode = TEXT_MODE;
@@ -543,78 +544,9 @@ void draw_line_v(int x, int y1, int y2, int color)
 	}
 }
 
-void frame_page(int page)
-{
-	if(page == 0)
-	{
-		frame_buffer = (unsigned char far*)PAGE0;
-		current_frame_buffer_page = 0;
-
-	}
-
-	if(page == 1)
-	{
-		frame_buffer = (unsigned char far*)PAGE1;
-		current_frame_buffer_page = 1;
-	}
-
-	_asm	{
-				mov     bl,0dh 
-     		   	mov     bh,byte ptr frame_buffer
-     		   	mov     cl,0ch      
-        		mov     ch,byte ptr frame_buffer+1
-        		mov     dx,CRT_CONTROLLER
-       			mov     ax,bx
-       			out     dx,ax
-       			mov     ax,cx
-       			out     dx,ax
-			}
-
-	while(!(inport(ATTR_CONTROLLER_FF)&(1<<3)))
-	{
-	}
-
-	while(inport(ATTR_CONTROLLER_FF)&(1<<3))
-	{
-	}
-}
-
-void draw_page(int page)
-{
-	if(page == 0)
-	{
-		draw_buffer = (unsigned char far*)PAGE0;
-		current_draw_buffer_page = 0;
-	}else
-	if(page == 1)
-	{
-		draw_buffer = (unsigned char far*)PAGE1;
-		current_draw_buffer_page = 1;
-	}
-}
-
-void flip_draw_page()
+void flip_front_page()
 {	
-	if(current_draw_buffer_page == 0)
-	{
-		draw_page(1);
-	}
-	else
-	{
-		draw_page(0);
-	}
-}
-
-void flip_frame_page()
-{	
-	if(current_frame_buffer_page == 0)
-	{
-		frame_page(1);
-	}
-	else
-	{
-		frame_page(0);
-	}
+	copy_vmem_to_dbuffer_latched(draw_buffer, frame_buffer, (SCREEN_WIDTH/4)*SCREEN_HEIGHT);
 }
 
 void fill_rectangle(int x1, int x2, int y1, int y2, int color)
@@ -957,6 +889,26 @@ void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int
 	}
 }
 
+void copy_vmem_to_dbuffer_latched (	unsigned char far* source,
+									unsigned char far* destination,
+									int bytes)
+{
+	unsigned char current_pixel = 0;
+
+	int i;
+
+	outport(GFX_CONTROLLER, 0x08);
+	outport(SEQUENCER, (0xff<<8)+0x02);
+
+	for(i=0; i<bytes; i++)
+	{	
+		current_pixel = *(source+i);		
+		*(destination+i) = 0;	
+	}
+
+	outport(GFX_CONTROLLER + 1, 0x0ff);	
+}
+
 void copy_vmem_to_dbuffer(	unsigned char far * location, 
 							int x_pos_fbuffer, 
 							int y_pos_fbuffer, 
@@ -978,6 +930,7 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 	int y;
 
 	int i;
+	int j;
 
 	src_plane = x_offset_start_vmem%4;
 	dest_plane = x_pos_fbuffer%4;
@@ -1001,8 +954,7 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 		for(x=0; x<=(x_offset_end_vmem-x_offset_start_vmem)-i; x+=4)	
 		{
 			for(y=0; y<=(y_offset_end_vmem-y_offset_start_vmem); y++)
-			{
-				
+			{		
 				current_pixel = *(	location +
 									src_offset +
 									((y+y_offset_start_vmem)*(x_vmem_size>>2)) +
@@ -1012,6 +964,7 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 				{
 					if(x<x_offset_end_vmem-x_offset_start_vmem)
 					{
+						
 						*(	draw_buffer + 
 							(x_pos_fbuffer>>2) + 
 							dest_offset +

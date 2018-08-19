@@ -96,4 +96,8 @@ void copy_vmem_to_dbuffer(  unsigned char far * location,
                             int x_offset_end_vmem,
                             int y_offset_end_vmem,
                             int x_vmem_size);
+
+void copy_vmem_to_dbuffer_latched ( unsigned char far * source,
+                                    unsigned char far * destination,
+                                    int bytes);
 #endif /* VGA_H */
