@@ -20,11 +20,11 @@
 #include <stdlib.h>
 #include <conio.h>
 
-#include <VGA.H>
-#include <FONFLIB.H>
+#include <vga.h>
+#include <fonflib.h>
 
-unsigned char far* frame_buffer = 0xA0000000;
-unsigned char far* draw_buffer = 0xA0004B00L;
+char far * frame_buffer = (char far *)0xA0000000;
+char far * draw_buffer = (char far *)0xA0004B00;
 
 unsigned char far* rom_char_set = 0xF000FA6EL;
 
@@ -32,22 +32,22 @@ int current_video_mode = TEXT_MODE;
 
 void set_color(unsigned char color_index, unsigned char red, unsigned char green, unsigned char blue)
 {
-	outportb(DAC_WRITE, color_index);
-	outportb(DAC_DATA, red);
-	outportb(DAC_DATA, green);
-	outportb(DAC_DATA, blue);
+	outp(DAC_WRITE, color_index);
+	outp(DAC_DATA, red);
+	outp(DAC_DATA, green);
+	outp(DAC_DATA, blue);
 }
 
 void set_pallette(unsigned char* pallette, int start_index, int end_index)
 {
 	int i;
 	int j;
-	outportb(DAC_WRITE, start_index);
+	outp(DAC_WRITE, start_index);
 	for(i = 0; i <= end_index-start_index; i++)
 	{
 		for(j=0; j<3; j++)
 		{
-			outportb(DAC_DATA,*(pallette+(i*3)+j));
+			outp(DAC_DATA,*(pallette+(i*3)+j));
 		}
 	}
 }
@@ -184,10 +184,10 @@ void load_pallette(char * filename, int size)
 			exit(EXIT_FAILURE);
 		}
 
-		outportb(DAC_WRITE, index);
-		outportb(DAC_DATA, r);
-		outportb(DAC_DATA, g);
-		outportb(DAC_DATA, b);
+		outp(DAC_WRITE, index);
+		outp(DAC_DATA, r);
+		outp(DAC_DATA, g);
+		outp(DAC_DATA, b);
 
 		index = 0;
 		r = 0;
@@ -201,20 +201,20 @@ void get_pallette(unsigned char* pallette, int start_index ,int end_index)
 	int i;
 	int j;
 
-	outportb(DAC_READ, start_index);
+	outp(DAC_READ, start_index);
 	for(i = 0; i <= end_index-start_index; i++)
 	{
 		for(j=0; j<3; j++)
 		{
-			*(pallette+(i*3)+j) = inportb(DAC_DATA);
+			*(pallette+(i*3)+j) = inp(DAC_DATA);
 		}
 	}
 }
 
 unsigned char get_color(unsigned char color_index)
 {
-	outportb(DAC_WRITE, color_index);
-	return inportb(DAC_DATA);
+	outp(DAC_WRITE, color_index);
+	return inp(DAC_DATA);
 }
 
 void set_graphics_mode(int mode)
@@ -242,31 +242,31 @@ void set_graphics_mode(int mode)
 				int 10h;
 				}
 
-		outport(SEQUENCER, 0x0604);
-		outport(SEQUENCER, 0x0100);
-		outportb(MISC_OUTPUT,0xe3);
-		outport(SEQUENCER, 0x0300);
+		outpw(SEQUENCER, 0x0604);
+		outpw(SEQUENCER, 0x0100);
+		outp(MISC_OUTPUT,0xe3);
+		outpw(SEQUENCER, 0x0300);
 
-		outportb(CRT_CONTROLLER,0x11);
-		data = inportb(CRT_CONTROLLER+1);
+		outp(CRT_CONTROLLER,0x11);
+		data = inp(CRT_CONTROLLER+1);
 		data = data & 0x7f;
-		outportb(CRT_CONTROLLER+1,data);
-		outport(CRT_CONTROLLER, 0x0d06);
-		outport(CRT_CONTROLLER, 0x3e07);
-		outport(CRT_CONTROLLER, 0x4109);
-		outport(CRT_CONTROLLER, 0xea10);
-		outport(CRT_CONTROLLER, 0xac11);
-		outport(CRT_CONTROLLER, 0xdf12);
-		outport(CRT_CONTROLLER, 0x0014);
-		outport(CRT_CONTROLLER, 0xe715);
-		outport(CRT_CONTROLLER, 0x0616);
-		outport(CRT_CONTROLLER, 0xe317);
+		outp(CRT_CONTROLLER+1,data);
+		outpw(CRT_CONTROLLER, 0x0d06);
+		outpw(CRT_CONTROLLER, 0x3e07);
+		outpw(CRT_CONTROLLER, 0x4109);
+		outpw(CRT_CONTROLLER, 0xea10);
+		outpw(CRT_CONTROLLER, 0xac11);
+		outpw(CRT_CONTROLLER, 0xdf12);
+		outpw(CRT_CONTROLLER, 0x0014);
+		outpw(CRT_CONTROLLER, 0xe715);
+		outpw(CRT_CONTROLLER, 0x0616);
+		outpw(CRT_CONTROLLER, 0xe317);
 
-		outport(SEQUENCER, 0x0f02);
+		outpw(SEQUENCER, 0x0f02);
 
 		_asm {
 			les di,draw_buffer;
-			sub ax,ax
+			sub ax,ax;
 			mov cx,320*240/4;
 			rep stosw;
 		}
@@ -279,33 +279,33 @@ void set_graphics_mode(int mode)
 			int 10h;
 			}
 
-		outportb(CRT_CONTROLLER,CRT_MAX_SCANLINE);
-		data = inportb(CRT_CONTROLLER+1);
-		outportb(CRT_CONTROLLER+1,RESET_BITS(data,0x0f));
+		outp(CRT_CONTROLLER,CRT_MAX_SCANLINE);
+		data = inp(CRT_CONTROLLER+1);
+		outp(CRT_CONTROLLER+1,RESET_BITS(data,0x0f));
 
-		outportb(CRT_CONTROLLER,CRT_ADDR_MODE);
-		data=inportb(CRT_CONTROLLER+1);
-		outportb(GFX_CONTROLLER+1,RESET_BITS(data,0x40));
+		outp(CRT_CONTROLLER,CRT_ADDR_MODE);
+		data=inp(CRT_CONTROLLER+1);
+		outp(GFX_CONTROLLER+1,RESET_BITS(data,0x40));
 
-		outportb(CRT_CONTROLLER,CRT_MODE_CONTROL);
-		data=inportb(CRT_CONTROLLER+1);
-		outportb(CRT_CONTROLLER+1,SET_BITS(data,0x40));
+		outp(CRT_CONTROLLER,CRT_MODE_CONTROL);
+		data=inp(CRT_CONTROLLER+1);
+		outp(CRT_CONTROLLER+1,SET_BITS(data,0x40));
 
-		outportb(GFX_CONTROLLER,GFX_WRITE_MODE);
-		data=inportb(GFX_CONTROLLER+1);
-		outportb(GFX_CONTROLLER+1,RESET_BITS(data,0x10));
+		outp(GFX_CONTROLLER,GFX_WRITE_MODE);
+		data=inp(GFX_CONTROLLER+1);
+		outp(GFX_CONTROLLER+1,RESET_BITS(data,0x10));
 
-		outportb(GFX_CONTROLLER,GFX_MISC);
-		data=inportb(GFX_CONTROLLER+1);
-		outportb(GFX_CONTROLLER+1,RESET_BITS(data,0x02));
+		outp(GFX_CONTROLLER,GFX_MISC);
+		data=inp(GFX_CONTROLLER+1);
+		outp(GFX_CONTROLLER+1,RESET_BITS(data,0x02));
 
-		outportb(SEQUENCER,SEQ_MEMORY_MODE);
-		data=inportb(SEQUENCER+1);
+		outp(SEQUENCER,SEQ_MEMORY_MODE);
+		data=inp(SEQUENCER+1);
 		data=RESET_BITS(data,0x08);
 		data=SET_BITS(data,0x04);
-		outportb(SEQUENCER+1,data);
-		outportb(SEQUENCER,SEQ_PLANE_ENABLE);
-		outportb(SEQUENCER+1,0x0f);
+		outp(SEQUENCER+1,data);
+		outp(SEQUENCER,SEQ_PLANE_ENABLE);
+		outp(SEQUENCER+1,0x0f);
 
 		_asm	{
 			les di, draw_buffer;
@@ -368,7 +368,7 @@ void set_pixel(int x, int y, int color)
 	}
 	if(current_video_mode == GRAPHICS_MODEX)
 	{
-		outport(SEQUENCER, 0x02+(1<<((x%4)+8)));
+		outpw(SEQUENCER, 0x02+(1<<((x%4)+8)));
 		draw_buffer[(y<<6)+(y<<4)+(x>>2)] = (unsigned char)color;
 	}
 
@@ -485,7 +485,7 @@ void draw_line_h(int x1, int x2, int y, int color)
 				sequence += 0x01<<i;
 			}
 			sequence = sequence<<8;
-			outport(SEQUENCER, sequence+0x02);
+			outpw(SEQUENCER, sequence+0x02);
 			draw_buffer[(y<<6)+(y<<4)+(x1>>2)] = (unsigned char)color;
 		}
 	}
@@ -534,7 +534,7 @@ void draw_line_v(int x, int y1, int y2, int color)
 		start_offset = draw_buffer + ((y1<<6) + (y1<<4) + (x>>2));
 
 		length = y2-y1;
-		outport(SEQUENCER, 0x02+(1<<((x%4)+8)));
+		outpw(SEQUENCER, 0x02+(1<<((x%4)+8)));
 
 		for(i=0;i<=length;i++)
 		{
@@ -653,7 +653,7 @@ void fill_rectangle(int x1, int x2, int y1, int y2, int color)
 					sequence += 0x01<<i;
 				}
 				sequence = sequence<<8;
-				outport(SEQUENCER, sequence+0x02);
+				outpw(SEQUENCER, sequence+0x02);
 				*start_offset = (unsigned char)color;
 				start_offset +=80;
 			}
@@ -712,7 +712,7 @@ void print_char(int xc, int yc, char c, int color, int transparent)
 			for(x=0; x<4; x++)
 			{
 				sequence = (xc+x)%4;
-				outport(SEQUENCER, ((0x1<<sequence)<<8)+0x02);
+				outpw(SEQUENCER, ((0x1<<sequence)<<8)+0x02);
 				if((*work_char & (bit_mask & 0xf0)))
 					draw_buffer[offset+((xc+x)>>2)] = (unsigned char)color;
 				else
@@ -858,7 +858,7 @@ void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int
 	{
 		for(x = 0; x < x_size; x++)
 		{
-			outport(SEQUENCER, ((0x1<<(x%4))<<8)+0x02);
+			outpw(SEQUENCER, ((0x1<<(x%4))<<8)+0x02);
 			for(j = 0; j<4; j++)
 			{	
 				current_char = fgetc(file);
@@ -897,16 +897,16 @@ void copy_vmem_to_dbuffer_latched (	unsigned char far* source,
 
 	int i;
 
-	outport(GFX_CONTROLLER, 0x08);
-	outport(SEQUENCER, (0xff<<8)+0x02);
+	outpw(GFX_CONTROLLER, 0x08);
+	outpw(SEQUENCER, (0xff<<8)+0x02);
 
 	for(i=0; i<bytes; i++)
 	{	
 		current_pixel = *(source+i);		
-		*(destination+i) = 0;	
+		*(destination+i) = current_pixel;	
 	}
 
-	outport(GFX_CONTROLLER + 1, 0x0ff);	
+	outpw(GFX_CONTROLLER + 1, 0x0ff);	
 }
 
 void copy_vmem_to_dbuffer(	unsigned char far * location, 
@@ -948,8 +948,8 @@ void copy_vmem_to_dbuffer(	unsigned char far * location,
 			dest_offset += 1;
 		}
 
-		outport(GFX_CONTROLLER, (src_plane<<8)+0x04);
-		outport(SEQUENCER, ((0x1<<dest_plane)<<8)+0x02);
+		outpw(GFX_CONTROLLER, (src_plane<<8)+0x04);
+		outpw(SEQUENCER, ((0x1<<dest_plane)<<8)+0x02);
 
 		for(x=0; x<=(x_offset_end_vmem-x_offset_start_vmem)-i; x+=4)	
 		{

@@ -1,21 +1,22 @@
-#Copyright Affonso Amendola 2018
-#WumpusVGA
+obj = wumpus.obj vga.obj fonflib.obj
+bin = wumpus.exe
 
-GAMENAME = wumpus
-CC = tcc
-RM = rm -f
+CC = wcc
+CFLAGS = -zq -otx
+LD = wlink
+INCLUDE = include
+LIB = /usr/share/openwatcom/lib286/dos/:/usr/share/openwatcom/lib286
 
-INCLUDE = include;D:\tc\include
-LIB = D:\tc\lib
-CCFLAGS = 
+$(bin): $(obj)
+	$(LD) name $@ file { $(obj) } libpath $(LIB) form dos
 
-all: $(GAMENAME).exe
+.c.obj:
+	$(CC) -i$(INCLUDE) -fo=$@ $(CFLAGS) $<
 
-$(GAMENAME).exe:
-	$(CC) "-I$(INCLUDE) -L$(LIB) -e$(GAMENAME) $(CCFLAGS)"  *.c 
+clean: .symbolic
+	rm *.obj
+	rm *.err
+	rm $(bin)
 
-run:
-	dosbox -conf ~/.dosbox/tcc.conf -c "$(GAMENAME)"
-
-clean:
-	$(RM) *.OBJ *.EXE *.LOG *.BAT
+run: .symbolic
+	dosbox $(bin)

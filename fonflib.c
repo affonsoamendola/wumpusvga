@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <conio.h>
 
-#include <FONFLIB.H>
+#include <fonflib.h>
 
 char* inttostring(int i, char b[])
 {

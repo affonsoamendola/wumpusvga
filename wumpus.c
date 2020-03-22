@@ -25,8 +25,8 @@
 #include <conio.h>
 #include <io.h>
 
-#include <VGA.H>
-#include <FONFLIB.H>
+#include <vga.h>
+#include <fonflib.h>
 
 #define PI 3.14159265
 
@@ -125,8 +125,8 @@ int game_turn_flags = 0;
 unsigned char* color_pallette;
 unsigned char* color_temp;
 
-unsigned char far * title_mem_location = 0xA000E100L;
-unsigned char far * sprites_mem_location = 0xA000FC00L;
+char far * title_mem_location = (char far *)0xA000E100L;
+char far * sprites_mem_location = (char far *)0xA000FC00L;
 		
 void print_order_info();
 
@@ -299,11 +299,13 @@ void get_gold()
 
 void init_system()
 {
+
 	set_graphics_mode(GRAPHICS_MODEX);
 
 	color_pallette = malloc(256*3);
 
 	get_pallette(color_pallette, 0, 255);
+
 	load_pallette("plt/TITLE.PLT", 12);
 	load_pallette("plt/SPRITES.PLT", 27);
 
@@ -315,7 +317,7 @@ void init_system()
 	state_flags = 0;
 	state_flags |= STATE_HAS_ARROW;
 
-	game_turn_flags = 0;	
+	game_turn_flags = 0;
 }
 
 void init_board()
@@ -493,8 +495,8 @@ void handle_input()
 	}
 }
 
-int main()
-{
+int main(int argc, void* argv)
+{	
 	init_system();
 
 	show_title();
@@ -550,6 +552,8 @@ int main()
 
 	set_graphics_mode(TEXT_MODE);
 	print_order_info();
+
+	return 0;
 }
 
 void draw_end_screen()
@@ -1059,6 +1063,7 @@ void draw_screen()
 
 void print_order_info()
 {
+	/*
 	int i =0;
 
 	textcolor(WHITE);
@@ -1234,6 +1239,7 @@ void print_order_info()
 	cprintf("        ");
 	textbackground(BLACK);
 	cprintf("                                                                ");
+	*/
 }
 
 
