@@ -1,4 +1,4 @@
-/*  Copyright 2018 Affonso Amendola
+/*  Copyright 2018-2020 Affonso Amendola
     
     This file is part of WumpusVGA.
     WumpusVGA is free software: you can redistribute it and/or modify
