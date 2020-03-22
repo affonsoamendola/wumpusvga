@@ -1,0 +1,18 @@
+include/vga.h(100): Warning! W138: No newline at end of file
+include/fonflib.h(28): Warning! W138: No newline at end of file
+wumpus.c(305): Warning! W131: No prototype found for function 'malloc'
+wumpus.c(305): Warning! W102: Type mismatch (warning)
+wumpus.c(305): Note! I2003: source conversion type is 'int'
+wumpus.c(305): Note! I2004: target conversion type is 'unsigned char *'
+wumpus.c(309): Warning! W131: No prototype found for function 'load_pallette'
+wumpus.c(315): Warning! W131: No prototype found for function 'srand'
+wumpus.c(325): Warning! W131: No prototype found for function 'rand'
+wumpus.c(407): Warning! W131: No prototype found for function 'flip_front_page'
+wumpus.c(596): Warning! W102: Type mismatch (warning)
+wumpus.c(596): Note! I2003: source conversion type is 'int'
+wumpus.c(596): Note! I2004: target conversion type is 'unsigned char *'
+wumpus.c(597): Warning! W102: Type mismatch (warning)
+wumpus.c(597): Note! I2003: source conversion type is 'int'
+wumpus.c(597): Note! I2004: target conversion type is 'unsigned char *'
+wumpus.c(611): Warning! W131: No prototype found for function 'free'
+wumpus.c(634): Warning! W131: No prototype found for function 'abs'
