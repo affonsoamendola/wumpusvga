@@ -5,6 +5,8 @@ Mainly used the help of this book to understand how the VGA systems worked, real
 
 Compilation is done via OpenWatcom (I only tested v2, not sure if the older versions work) just run wmake and it *SHOULD* work.
 
+There's a pre-compiled DOS executable on the releases folder that should work in good-old DosBox.
+
 Thanks for playing/being interested in this software.
 
 WumpusVGA is distributed under the GPLv3 license.
