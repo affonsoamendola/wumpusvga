@@ -57,6 +57,23 @@
 
 #define TRANSPARENT_INDEX   0
 
+#define BLACK 0x00
+#define BLUE 0x01
+#define GREEN 0x02
+#define CYAN 0x03
+#define RED 0x04
+#define MAGENTA 0x05
+#define BROWN 0x06
+#define LIGHTGRAY 0x07
+#define GRAY 0x08
+#define LIGHTBLUE 0x09
+#define LIGHTGREEN 0x0A
+#define LIGHTCYAN 0x0B
+#define LIGHTRED 0x0C
+#define LIGHTMAGENTA 0x0D
+#define YELLOW 0x0E
+#define WHITE 0x0F
+
 extern int current_frame_buffer_page;
 extern int current_draw_buffer_page;
 
@@ -67,6 +84,8 @@ void get_pallette(unsigned char* pallette, int start_index ,int end_index);
 unsigned char get_color(unsigned char color_index);
 
 void set_graphics_mode(int mode);
+
+void flip_front_page();
 
 void fill_screen(int color);
 void set_pixel(int x, int y, int color);
@@ -83,6 +102,7 @@ void fill_rectangle(int x1, int x2, int y1, int y2, int color);
 void print_char(int xc, int yc, char c, int color, int transparent);
 void print_string(int x, int y, int color, char *string, int transparent);
 
+void load_pallette(char * filename, int size);
 void load_pgm(char* filename, unsigned char far * allocated_mem, int x_size, int y_size);
 
 void copy_vmem_to_dbuffer(  unsigned char far * location, 

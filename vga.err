@@ -1,0 +1,4 @@
+vga.c(29): Warning! W101: Non-portable pointer conversion
+vga.c(29): Note! I2003: source conversion type is 'unsigned long'
+vga.c(29): Note! I2004: target conversion type is 'unsigned char __far *'
+vga.c(69): Warning! W131: No prototype found for function 'fputi'
